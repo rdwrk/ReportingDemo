@@ -1,0 +1,32 @@
+@page
+@model Reporting.WebDemo.Pages.SalesReportModel
+@{ ViewData["Title"] = "Sales Report"; }
+
+<div class="card">
+    <h2>Sales Summary Report</h2>
+    <form method="post">
+        <label>Date From</label>
+        <input type="date" name="DateFrom" value="@Model.DateFrom" />
+        <label>Date To</label>
+        <input type="date" name="DateTo" value="@Model.DateTo" />
+        <label>Region</label>
+        <select name="Region">
+            <option value="">All Regions</option>
+            <option value="North">North</option>
+            <option value="South">South</option>
+            <option value="East">East</option>
+            <option value="West">West</option>
+            <option value="Midlands">Midlands</option>
+        </select>
+        <label>Prepared By</label>
+        <input type="text" name="PreparedBy" value="@Model.PreparedBy" />
+        <div class="buttons">
+            <button class="btn btn-primary" name="action" value="view">View PDF</button>
+        </div>
+    </form>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.PdfUrl))
+{
+    <iframe class="pdf-viewer" src="@Model.PdfUrl"></iframe>
+}

@@ -1,0 +1,23 @@
+@page
+@model Reporting.WebDemo.Pages.InvoiceReportModel
+@{ ViewData["Title"] = "Invoice Report"; }
+
+<div class="card">
+    <h2>Invoice Summary Report</h2>
+    <form method="post">
+        <label>Date From</label>
+        <input type="date" name="DateFrom" value="@Model.DateFrom" />
+        <label>Date To</label>
+        <input type="date" name="DateTo" value="@Model.DateTo" />
+        <label>Prepared By</label>
+        <input type="text" name="PreparedBy" value="@Model.PreparedBy" />
+        <div class="buttons">
+            <button class="btn btn-primary" name="action" value="view">View PDF</button>
+        </div>
+    </form>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.PdfUrl))
+{
+    <iframe class="pdf-viewer" src="@Model.PdfUrl"></iframe>
+}
