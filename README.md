@@ -1,6 +1,6 @@
 # ReportingDemo
 
-A PDF reporting solution built with **MigraDoc + PDFsharp 6.2.4**, hosted in an ASP.NET Core 8 Razor Pages web application. Reports are generated server-side and displayed inline in the browser via an embedded PDF viewer.
+A PDF reporting solution built with **MigraDoc + PDFsharp 6.2.4**. The core PDF generation library targets `netstandard2.0` and is shared between two web front-ends: a modern ASP.NET Core 8 Razor Pages application and a classic ASP.NET Web Forms application targeting .NET Framework 4.8.
 
 ---
 
@@ -8,10 +8,15 @@ A PDF reporting solution built with **MigraDoc + PDFsharp 6.2.4**, hosted in an 
 
 ```
 ReportingDemo.sln
-├── Reporting.Core          (netstandard2.0)  – Contracts and models
-├── Reporting.Pdf           (netstandard2.0)  – PDF builders and renderer
-└── Reporting.WebDemo       (net8.0)          – ASP.NET Core web host
+├── Reporting.Core           (netstandard2.0)  – Contracts and models
+├── Reporting.Pdf            (netstandard2.0)  – PDF builders and renderer
+├── Reporting.WebDemo        (net8.0)          – ASP.NET Core Razor Pages host
+└── Reporting.WebFormsDemo   (net4.8)          – ASP.NET Web Forms host
 ```
+
+---
+
+## Projects
 
 ### Reporting.Core
 
@@ -35,7 +40,7 @@ Implements PDF generation on top of MigraDoc/PDFsharp.
 | Type | Purpose |
 |------|---------|
 | `PdfReportRenderer` | Renders a `Document` → `byte[]`; exposes `BuildAndRender<TModel>()` so callers never reference MigraDoc types directly |
-| `WindowsFontResolver` | `IFontResolver` implementation required on .NET 8; maps Calibri, Arial and Courier New (regular/bold/italic) to TTF files in `C:\Windows\Fonts` |
+| `WindowsFontResolver` | `IFontResolver` implementation; maps Calibri, Arial and Courier New (regular/bold/italic) to TTF files in `C:\Windows\Fonts` |
 | `MasterReportTemplate<TModel>` | Abstract base for report builders; handles page setup, repeating header, footer (timestamp + page numbers) |
 | `ReportStyles` | Centralised MigraDoc style definitions (colours, fonts, paragraph styles) |
 | `ReportTableBuilder` | Fluent builder for data tables: alternating row shading, group headers, total rows, repeating column headers on page breaks |
@@ -45,7 +50,7 @@ Implements PDF generation on top of MigraDoc/PDFsharp.
 
 ### Reporting.WebDemo
 
-ASP.NET Core 8 Razor Pages web application.
+ASP.NET Core 8 Razor Pages web application hosted on Kestrel.
 
 | Type | Purpose |
 |------|---------|
@@ -56,52 +61,76 @@ ASP.NET Core 8 Razor Pages web application.
 | `SalesReport.cshtml` | Filter form (date range, region, prepared-by) + inline PDF iframe |
 | `InvoiceReport.cshtml` | Filter form (date range, prepared-by) + inline PDF iframe |
 
+### Reporting.WebFormsDemo
+
+ASP.NET Web Forms application targeting .NET Framework 4.8, hosted on IIS Express.
+
+| Type | Purpose |
+|------|---------|
+| `StreamPdf.ashx` | Generic HTTP handler — streams PDF bytes with `Content-Disposition: inline` or `attachment` |
+| `ReportService` | Orchestrates data retrieval and PDF rendering; returns a `ReportResult` value object |
+| `SalesReportDataService` | Generates 120 seeded random sales lines |
+| `InvoiceReportDataService` | Generates 5 customer groups with 8–20 invoices each |
+| `SalesReport.aspx` | Filter form (date range, region, prepared-by) + inline PDF iframe |
+| `InvoiceReport.aspx` | Filter form (date range, prepared-by) + inline PDF iframe |
+| `Site.Master` | Master page with navy nav bar and custom CSS |
+
 ---
 
 ## Prerequisites
 
-| Requirement | Version |
-|-------------|---------|
-| Visual Studio | 2022 / 2026 with **ASP.NET and web development** workload |
-| .NET SDK | 8.0+ |
-| OS | Windows (required for `WindowsFontResolver` — reads fonts from `C:\Windows\Fonts`) |
+| Requirement | Notes |
+|-------------|-------|
+| Visual Studio 2022 / 2026 | **ASP.NET and web development** workload required |
+| .NET SDK 8.0+ | Required for `Reporting.WebDemo` |
+| .NET Framework 4.8 | Required for `Reporting.WebFormsDemo` (pre-installed on Windows 10/11) |
+| IIS Express | Installed automatically with the ASP.NET workload — required for `Reporting.WebFormsDemo` |
+| Windows OS | Required — `WindowsFontResolver` reads fonts from `C:\Windows\Fonts` |
 
-No additional installs are needed. NuGet restore pulls `PDFsharp-MigraDoc 6.2.4` automatically.
+NuGet restore handles all package dependencies including `PDFsharp-MigraDoc 6.2.4`.
 
 ---
 
 ## Getting Started
 
-1. Open `ReportingDemo.sln` in Visual Studio.
-2. Set **Reporting.WebDemo** as the startup project.
-3. Press **F5** (or **Ctrl+F5**) — the app starts on `http://localhost:5000` and opens the Sales Report page.
-4. Select filters and click **View PDF** to generate and display the report inline.
+### Reporting.WebDemo (ASP.NET Core)
 
-To run from the CLI:
+1. Open `ReportingDemo.sln` in Visual Studio.
+2. Right-click **Reporting.WebDemo** → **Set as Startup Project**.
+3. Press **F5** — the app starts on `http://localhost:5000`.
+
+Or from the CLI:
 
 ```bash
 cd Reporting.WebDemo
 dotnet run
 ```
 
-Then navigate to `http://localhost:5000/SalesReport` or `http://localhost:5000/InvoiceReport`.
+Then open `http://localhost:5000/SalesReport` or `http://localhost:5000/InvoiceReport`.
+
+### Reporting.WebFormsDemo (Web Forms / .NET 4.8)
+
+1. Right-click **Reporting.WebFormsDemo** → **Set as Startup Project**.
+2. Press **F5** — IIS Express launches and opens the home page.
+3. Navigate to **Sales Report** or **Invoice Report** in the nav bar.
 
 ---
 
-## Report Endpoint
+## PDF Stream Endpoints
 
-PDF bytes are streamed by a minimal API endpoint:
+Both web projects expose equivalent endpoints that accept the same query-string parameters.
 
-```
-GET /reports/stream?report={name}&inline={true|false}&dateFrom={date}&dateTo={date}&filter={value}&preparedBy={name}
-```
+| Project | Endpoint |
+|---------|----------|
+| WebDemo | `GET /reports/stream` |
+| WebFormsDemo | `GET /StreamPdf.ashx` |
 
 | Parameter | Values | Description |
 |-----------|--------|-------------|
 | `report` | `sales`, `invoice` | Which report to generate |
 | `inline` | `true`, `false` | `true` = display in browser; `false` = force download |
-| `dateFrom` | ISO date (`yyyy-MM-dd`) | Start of reporting period |
-| `dateTo` | ISO date (`yyyy-MM-dd`) | End of reporting period |
+| `dateFrom` | `yyyy-MM-dd` | Start of reporting period |
+| `dateTo` | `yyyy-MM-dd` | End of reporting period |
 | `filter` | string | Region filter (sales report only) |
 | `preparedBy` | string | Name shown in the report header |
 
@@ -116,32 +145,32 @@ Response: `Content-Type: application/pdf` with `Content-Disposition: inline` or 
 - **Orientation:** Landscape A4
 - **Reference:** RPT-SLS-001
 - **Summary panel:** Total lines, total revenue, gross profit, margin %
-- **Detail table:** Date, product, sales rep, region, units, unit price, revenue, gross profit — paginated across multiple pages
+- **Detail table:** Date, product, sales rep, region, units, unit price, revenue, gross profit — paginated across multiple pages with repeating column headers
 
 ### Invoice Summary Report
 
 - **Orientation:** Portrait A4
 - **Reference:** RPT-INV-001
 - **Summary panel:** Total customers, total invoices, total value, outstanding value
-- **Detail table:** Grouped by customer, showing invoice number, date, due date, description, amount, status — with per-customer subtotals and a grand total
+- **Detail table:** Grouped by customer with invoice number, date, due date, description, amount and status — per-customer subtotals and a grand total row
 
 ---
 
 ## Adding a New Report
 
 1. **Define the model** in `Reporting.Core\Models\` — implement `IReportModel`.
-2. **Create a data service** in `Reporting.WebDemo\Services\` — implement `IReportDataService<TModel>`.
-3. **Create a builder** in `Reporting.Pdf\Reports\` — extend `MasterReportTemplate<TModel>`.
-4. **Register the report** in `ReportService.Generate()` — add a `case` for the new report name.
-5. **Add a Razor Page** in `Reporting.WebDemo\Pages\` for the filter form and iframe.
+2. **Create a builder** in `Reporting.Pdf\Reports\` — extend `MasterReportTemplate<TModel>`.
+3. **Create a data service** in the web project's `Services\` folder — implement `IReportDataService<TModel>`.
+4. **Register the report** — add a `case` to `ReportService.Generate()` in each web project.
+5. **Add a page** — a Razor Page (`.cshtml`) in WebDemo or an `.aspx` page in WebFormsDemo.
 
 ---
 
 ## Architecture Notes
 
-- `Reporting.Core` and `Reporting.Pdf` target `netstandard2.0` so they are compatible with both .NET Framework 4.8 and .NET 8.
-- `Reporting.WebDemo` targets `net8.0` and uses Kestrel — no IIS Express or `applicationhost.config` required.
-- `WindowsFontResolver` is registered once via `PdfReportRenderer`'s static constructor and must be set before any `PdfDocumentRenderer` is created.
-- `PdfReportRenderer.BuildAndRender<TModel>()` keeps the web layer decoupled from MigraDoc — it never needs to reference the `Document` type directly.
+- `Reporting.Core` and `Reporting.Pdf` target `netstandard2.0`, making them compatible with both .NET Framework 4.8 and .NET 8 without modification.
+- `WindowsFontResolver` is registered once in `PdfReportRenderer`'s static constructor. PDFsharp on .NET Core does not read GDI+ system fonts automatically, so this is required.
+- `PdfReportRenderer.BuildAndRender<TModel>()` keeps web layers fully decoupled from MigraDoc — neither web project needs to reference the `Document` type directly.
+- `Reporting.WebFormsDemo` must reference `PDFsharp-MigraDoc` directly (in addition to the project references) because old-style `.csproj` files do not propagate transitive NuGet dependencies from `netstandard2.0` projects.
 - Table column headers repeat on every page break (`HeadingFormat = true`).
 - Group header rows use `KeepWith = 2` to prevent orphaned headers at page boundaries.
