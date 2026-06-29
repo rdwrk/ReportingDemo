@@ -29,9 +29,10 @@ Defines the shared contracts used across all projects.
 | `IReportRenderer` | Renders a `Document` to a `byte[]` PDF |
 | `IReportDataService<TModel>` | Fetches or generates data for a given `ReportRequest` |
 | `ReportRequest` | Carries date range, filter, and arbitrary key/value parameters |
-| `ReportMetadata` | Title, subtitle, reference, classification, prepared-by, timestamp |
+| `ReportMetadata` | Title, optional header lines, logo path, app name/version, timestamp |
 | `SalesReportModel` / `SalesLineItem` | Sales summary report data |
 | `InvoiceReportModel` / `CustomerInvoiceGroup` / `InvoiceLine` | Invoice report data |
+| `RegionSummaryReportModel` / `RegionRow` | Region performance overview data |
 
 ### Reporting.Pdf
 
@@ -41,12 +42,14 @@ Implements PDF generation on top of MigraDoc/PDFsharp.
 |------|---------|
 | `PdfReportRenderer` | Renders a `Document` → `byte[]`; exposes `BuildAndRender<TModel>()` so callers never reference MigraDoc types directly |
 | `WindowsFontResolver` | `IFontResolver` implementation; maps Calibri, Arial and Courier New (regular/bold/italic) to TTF files in `C:\Windows\Fonts` |
-| `MasterReportTemplate<TModel>` | Abstract base for report builders; handles page setup, repeating header, footer (timestamp + page numbers) |
+| `MasterReportTemplate<TModel>` | Abstract base for all report builders; handles page setup, repeating header, and three-column footer |
 | `ReportStyles` | Centralised MigraDoc style definitions (colours, fonts, paragraph styles) |
-| `ReportTableBuilder` | Fluent builder for data tables: alternating row shading, group headers, total rows, repeating column headers on page breaks |
+| `ReportTableBuilder` | Fluent builder for data tables with proportional column widths, alternating row shading, group headers, total rows, and repeating column headers on page breaks |
 | `SummaryPanel` | Renders a key/value summary block as a two-pair-per-row table |
-| `SalesReportBuilder` | Landscape A4 report: summary panel + paginated detail table |
-| `InvoiceReportBuilder` | Portrait A4 report: grouped invoices per customer with subtotals |
+| `LogoProvider` | Extracts the embedded default logo PNG to a temp file and returns its path for MigraDoc image loading |
+| `SalesReportBuilder` | Landscape A4; filter-driven detail table with summary panel |
+| `InvoiceReportBuilder` | Landscape A4; invoices grouped by customer with subtotals |
+| `RegionSummaryReportBuilder` | Portrait A4; parameter-free overview aggregated by region |
 
 ### Reporting.WebDemo
 
@@ -58,8 +61,10 @@ ASP.NET Core 8 Razor Pages web application hosted on Kestrel.
 | `ReportService` | Orchestrates data retrieval and PDF rendering; returns `(byte[], fileName)` |
 | `SalesReportDataService` | Generates 120 seeded random sales lines |
 | `InvoiceReportDataService` | Generates 5 customer groups with 8–20 invoices each |
+| `RegionSummaryDataService` | Aggregates seeded sales data into per-region totals |
 | `SalesReport.cshtml` | Filter form (date range, region, prepared-by) + inline PDF iframe |
 | `InvoiceReport.cshtml` | Filter form (date range, prepared-by) + inline PDF iframe |
+| `RegionSummary.cshtml` | No form — PDF renders automatically on page load |
 
 ### Reporting.WebFormsDemo
 
@@ -71,8 +76,10 @@ ASP.NET Web Forms application targeting .NET Framework 4.8, hosted on IIS Expres
 | `ReportService` | Orchestrates data retrieval and PDF rendering; returns a `ReportResult` value object |
 | `SalesReportDataService` | Generates 120 seeded random sales lines |
 | `InvoiceReportDataService` | Generates 5 customer groups with 8–20 invoices each |
+| `RegionSummaryDataService` | Aggregates seeded sales data into per-region totals |
 | `SalesReport.aspx` | Filter form (date range, region, prepared-by) + inline PDF iframe |
 | `InvoiceReport.aspx` | Filter form (date range, prepared-by) + inline PDF iframe |
+| `RegionSummary.aspx` | No form — PDF renders automatically on page load |
 | `Site.Master` | Master page with navy nav bar and custom CSS |
 
 ---
@@ -106,13 +113,13 @@ cd Reporting.WebDemo
 dotnet run
 ```
 
-Then open `http://localhost:5000/SalesReport` or `http://localhost:5000/InvoiceReport`.
+Then open `http://localhost:5000/SalesReport`, `http://localhost:5000/InvoiceReport`, or `http://localhost:5000/RegionSummary`.
 
 ### Reporting.WebFormsDemo (Web Forms / .NET 4.8)
 
 1. Right-click **Reporting.WebFormsDemo** → **Set as Startup Project**.
 2. Press **F5** — IIS Express launches and opens the home page.
-3. Navigate to **Sales Report** or **Invoice Report** in the nav bar.
+3. Navigate to **Sales Report**, **Invoice Report**, or **Region Summary** in the nav bar.
 
 ---
 
@@ -127,12 +134,12 @@ Both web projects expose equivalent endpoints that accept the same query-string 
 
 | Parameter | Values | Description |
 |-----------|--------|-------------|
-| `report` | `sales`, `invoice` | Which report to generate |
+| `report` | `sales`, `invoice`, `region-summary` | Which report to generate |
 | `inline` | `true`, `false` | `true` = display in browser; `false` = force download |
-| `dateFrom` | `yyyy-MM-dd` | Start of reporting period |
-| `dateTo` | `yyyy-MM-dd` | End of reporting period |
+| `dateFrom` | `yyyy-MM-dd` | Start of reporting period (sales and invoice only) |
+| `dateTo` | `yyyy-MM-dd` | End of reporting period (sales and invoice only) |
 | `filter` | string | Region filter (sales report only) |
-| `preparedBy` | string | Name shown in the report header |
+| `preparedBy` | string | Name shown in the report header (sales and invoice only) |
 
 Response: `Content-Type: application/pdf` with `Content-Disposition: inline` or `attachment`.
 
@@ -144,15 +151,65 @@ Response: `Content-Type: application/pdf` with `Content-Disposition: inline` or 
 
 - **Orientation:** Landscape A4
 - **Reference:** RPT-SLS-001
+- **Header lines:** Filter summary (region + date range), prepared-by, ref, classification
 - **Summary panel:** Total lines, total revenue, gross profit, margin %
-- **Detail table:** Date, product, sales rep, region, units, unit price, revenue, gross profit — paginated across multiple pages with repeating column headers
+- **Detail table:** Date, product, sales rep, region, units, unit price, revenue, gross profit — paginated with repeating column headers
 
 ### Invoice Summary Report
 
-- **Orientation:** Portrait A4
+- **Orientation:** Landscape A4
 - **Reference:** RPT-INV-001
+- **Header lines:** Date range subtitle, prepared-by, ref, classification
 - **Summary panel:** Total customers, total invoices, total value, outstanding value
-- **Detail table:** Grouped by customer with invoice number, date, due date, description, amount and status — per-customer subtotals and a grand total row
+- **Detail table:** Grouped by customer — invoice number, date, due date, description, net, VAT, gross, status — per-customer subtotals and a grand total row
+
+### Region Performance Overview
+
+- **Orientation:** Portrait A4
+- **Reference:** RPT-RGN-001
+- **Parameters:** None — generates automatically with no user input
+- **Summary panel:** Region count, total lines, total revenue, overall margin
+- **Detail table:** One row per region showing lines, revenue, gross profit, margin %
+
+---
+
+## Page Header Design
+
+Every report shares the same master header built by `MasterReportTemplate`:
+
+- **Left:** Report title (large, navy) followed by any per-report `HeaderLines` (smaller blue text)
+- **Right:** Company logo (embedded PNG, right-aligned)
+- **Divider:** No divider line — content begins immediately below
+
+`HeaderLines` is a `List<string>` on `ReportMetadata`. Each builder populates it with whatever context lines that report needs (date range, prepared-by, classification, etc.). Reports that need no extra context leave it empty. The page top margin auto-expands by **0.5 cm per header line** so content is never crowded regardless of how many lines a report adds.
+
+## Page Footer Design
+
+Three-column layout on every page:
+
+| Left | Centre | Right |
+|------|--------|-------|
+| Application name + version | Page X of Y | Generated date/time |
+
+Both `AppName` and `AppVersion` are properties on `ReportMetadata` with defaults of `"Reporting Demo"` and `"1.0"`.
+
+---
+
+## Dynamic Column Widths
+
+`ReportTableBuilder.Create()` accepts **relative weights** rather than fixed centimetre values. Each column's actual width is computed as:
+
+```
+actualWidth = (weight / totalWeight) × totalWidthCm
+```
+
+`totalWidthCm` is provided by `MasterReportTemplate.GetContentWidthCm()`, which derives the available width from the page size, orientation, and margins. Tables always span the full content area regardless of page size, orientation, or margin changes — no manual width calculations needed when adding a new report.
+
+---
+
+## Logo
+
+The default logo is a 200×56 px PNG (navy rounded rectangle, "RD" in white, "REPORTING DEMO" in gold) embedded as a resource in `Reporting.Pdf.dll`. `LogoProvider.GetPath()` extracts it to a temp file on first use and caches the path for the lifetime of the process, so no filesystem configuration is required. To use a custom logo, set `ReportMetadata.LogoPath` to an absolute file path and `ReportMetadata.LogoWidthCm` to the desired rendered width.
 
 ---
 
@@ -160,9 +217,14 @@ Response: `Content-Type: application/pdf` with `Content-Disposition: inline` or 
 
 1. **Define the model** in `Reporting.Core\Models\` — implement `IReportModel`.
 2. **Create a builder** in `Reporting.Pdf\Reports\` — extend `MasterReportTemplate<TModel>`.
+   - Override `Orientation` if landscape is needed.
+   - In `GetMetadata()`, set `HeaderLines` with any per-report context lines, and set `LogoPath = LogoProvider.GetPath()` to include the logo.
+   - In `BuildContent()`, pass `GetContentWidthCm()` to `ReportTableBuilder.Create()` and `SummaryPanel.Add()`.
 3. **Create a data service** in the web project's `Services\` folder — implement `IReportDataService<TModel>`.
 4. **Register the report** — add a `case` to `ReportService.Generate()` in each web project.
-5. **Add a page** — a Razor Page (`.cshtml`) in WebDemo or an `.aspx` page in WebFormsDemo.
+5. **Add a page:**
+   - WebDemo: a Razor Page (`.cshtml` + `.cshtml.cs`). For a parameter-free report, set `PdfUrl` in `OnGet()` and render the iframe directly — no form needed.
+   - WebFormsDemo: an `.aspx` page + code-behind + designer; register all three files in the `.csproj`. For a parameter-free report, set `pdfFrame.Src` in `Page_Load`.
 
 ---
 
