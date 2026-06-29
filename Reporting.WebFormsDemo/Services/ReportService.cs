@@ -52,6 +52,13 @@ namespace Reporting.WebFormsDemo.Services
                     return new ReportResult(invBytes,
                         string.Format("InvoiceSummary_{0:yyyyMMdd}.pdf", DateTime.Today));
 
+                case "region-summary":
+                    byte[] rgnBytes = _renderer.BuildAndRender(
+                        new RegionSummaryReportBuilder(),
+                        new RegionSummaryDataService().GetModel(request));
+                    return new ReportResult(rgnBytes,
+                        string.Format("RegionPerformance_{0:yyyyMMdd}.pdf", DateTime.Today));
+
                 default:
                     throw new ArgumentException("Unknown report: " + reportName);
             }

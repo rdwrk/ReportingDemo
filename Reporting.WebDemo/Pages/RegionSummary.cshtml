@@ -1,0 +1,10 @@
+@page
+@model Reporting.WebDemo.Pages.RegionSummaryModel
+@{ ViewData["Title"] = "Region Summary"; }
+
+<div class="card">
+    <h2>Region Performance Overview</h2>
+    <p style="color:#555; font-size:14px; margin:0;">Live report — aggregated across all regions, no filters required.</p>
+</div>
+
+<iframe class="pdf-viewer" src="@Model.PdfUrl"></iframe>

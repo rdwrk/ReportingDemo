@@ -131,4 +131,45 @@ namespace Reporting.WebDemo.Services
             };
         }
     }
+
+    /// <summary>Generates the Region Performance Overview by aggregating the same seeded sales data.</summary>
+    public class RegionSummaryDataService : IReportDataService<RegionSummaryReportModel>
+    {
+        private static readonly string[] Products = {
+            "Enterprise CRM License", "Analytics Suite Pro", "Cloud Backup 500GB",
+            "Security Audit Package", "API Integration Module", "Data Warehouse Connector",
+            "Mobile App Builder", "Reporting Engine", "SSO Gateway", "DevOps Toolkit"
+        };
+        private static readonly string[] Reps    = { "Alice Thompson", "Bob Patel", "Carol Edwards", "David Kim", "Emma Walsh" };
+        private static readonly string[] Regions = { "East", "Midlands", "North", "South", "West" };
+
+        public RegionSummaryReportModel GetModel(ReportRequest request)
+        {
+            var rng  = new Random(42);
+            var from = DateTime.Today.AddMonths(-3);
+            var to   = DateTime.Today;
+            var span = (to - from).TotalDays;
+
+            var buckets = new Dictionary<string, (int lines, decimal rev, decimal gp)>();
+            foreach (var r in Regions) buckets[r] = (0, 0, 0);
+
+            for (int i = 0; i < 120; i++)
+            {
+                var region    = Regions[rng.Next(Regions.Length)];
+                decimal price = Math.Round((decimal)(rng.NextDouble() * 1800 + 200), 2);
+                int units     = rng.Next(1, 25);
+                decimal cogs  = Math.Round(price * (decimal)(rng.NextDouble() * 0.4 + 0.3), 2) * units;
+                decimal rev   = price * units;
+                decimal gp    = rev - cogs;
+                var (l, r2, g) = buckets[region];
+                buckets[region] = (l + 1, r2 + rev, g + gp);
+            }
+
+            var rows = new List<RegionRow>();
+            foreach (var kvp in buckets)
+                rows.Add(new RegionRow { Region = kvp.Key, LineCount = kvp.Value.lines, Revenue = kvp.Value.rev, GrossProfit = kvp.Value.gp });
+
+            return new RegionSummaryReportModel { Rows = rows };
+        }
+    }
 }

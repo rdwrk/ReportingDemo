@@ -145,4 +145,47 @@ namespace Reporting.WebFormsDemo.Services
             };
         }
     }
+
+    /// <summary>Generates the Region Performance Overview by aggregating the same seeded sales data.</summary>
+    public class RegionSummaryDataService : IReportDataService<RegionSummaryReportModel>
+    {
+        private static readonly string[] Regions = { "East", "Midlands", "North", "South", "West" };
+
+        /// <inheritdoc />
+        public RegionSummaryReportModel GetModel(ReportRequest request)
+        {
+            var rng = new Random(42);
+
+            var revBucket  = new decimal[Regions.Length];
+            var gpBucket   = new decimal[Regions.Length];
+            var lineBucket = new int[Regions.Length];
+
+            for (int i = 0; i < 120; i++)
+            {
+                int     ri    = rng.Next(Regions.Length);
+                decimal price = Math.Round((decimal)(rng.NextDouble() * 1800 + 200), 2);
+                int     units = rng.Next(1, 25);
+                decimal cogs  = Math.Round(price * (decimal)(rng.NextDouble() * 0.4 + 0.3), 2) * units;
+                decimal rev   = price * units;
+
+                revBucket[ri]  += rev;
+                gpBucket[ri]   += rev - cogs;
+                lineBucket[ri] += 1;
+            }
+
+            var rows = new List<RegionRow>();
+            for (int i = 0; i < Regions.Length; i++)
+            {
+                rows.Add(new RegionRow
+                {
+                    Region      = Regions[i],
+                    LineCount   = lineBucket[i],
+                    Revenue     = revBucket[i],
+                    GrossProfit = gpBucket[i],
+                });
+            }
+
+            return new RegionSummaryReportModel { Rows = rows };
+        }
+    }
 }

@@ -51,6 +51,11 @@ namespace Reporting.WebDemo.Services
                     return (_renderer.BuildAndRender(new InvoiceReportBuilder(), invModel),
                             $"InvoiceSummary_{DateTime.Today:yyyyMMdd}.pdf");
 
+                case "region-summary":
+                    var rgnModel = new RegionSummaryDataService().GetModel(request);
+                    return (_renderer.BuildAndRender(new RegionSummaryReportBuilder(), rgnModel),
+                            $"RegionPerformance_{DateTime.Today:yyyyMMdd}.pdf");
+
                 default:
                     throw new ArgumentException($"Unknown report: {reportName}");
             }

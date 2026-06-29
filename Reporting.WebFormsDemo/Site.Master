@@ -26,6 +26,7 @@
             <a class="rd-brand" runat="server" href="~/">&#128202; Reporting Demo</a>
             <a class="rd-link" runat="server" href="~/SalesReport">Sales Report</a>
             <a class="rd-link" runat="server" href="~/InvoiceReport">Invoice Report</a>
+            <a class="rd-link" runat="server" href="~/RegionSummary">Region Summary</a>
         </nav>
 
         <div class="rd-container">
