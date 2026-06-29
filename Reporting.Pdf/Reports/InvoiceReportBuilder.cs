@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using MigraDoc.DocumentObjectModel;
 using Reporting.Core.Models;
+using Reporting.Pdf.Assets;
 using Reporting.Pdf.Components;
 using Reporting.Pdf.Styles;
 using Reporting.Pdf.Templates;
@@ -17,13 +18,16 @@ namespace Reporting.Pdf.Reports
                 ? $"By Customer — {model.DateFrom:dd MMM yyyy} to {model.DateTo:dd MMM yyyy}"
                 : "By Customer — All Dates";
 
+            var lines = new List<string> { subtitle };
+            if (!string.IsNullOrEmpty(model.PreparedBy))
+                lines.Add($"Prepared by: {model.PreparedBy}   |   Ref: RPT-INV-001   |   Finance — Confidential");
+
             return new ReportMetadata
             {
-                ReportTitle     = "Invoice Summary Report",
-                Subtitle        = subtitle,
-                ReportReference = "RPT-INV-001",
-                PreparedBy      = model.PreparedBy,
-                Classification  = "Finance — Confidential",
+                ReportTitle = "Invoice Summary Report",
+                HeaderLines = lines,
+                LogoPath    = LogoProvider.GetPath(),
+                LogoWidthCm = 3.5,
             };
         }
 
@@ -36,13 +40,13 @@ namespace Reporting.Pdf.Reports
                 ["Grand Total"] = $"£{model.GrandTotalGross:N2}",
                 ["Outstanding"] = $"£{model.TotalOutstanding:N2}",
             };
-            SummaryPanel.Add(section, summary);
+            SummaryPanel.Add(section, summary, GetContentWidthCm());
 
             var heading = section.AddParagraph("Invoice Lines by Customer");
             heading.Style = ReportStyles.SectionHeading;
 
-            double[] widths  = { 2.5, 2.5, 2.5, 5.5, 2.5, 2.0, 2.5, 2.5 };
             string[] headers = { "Invoice No", "Invoice Date", "Due Date", "Description", "Net £", "VAT £", "Gross £", "Status" };
+            double[] weights = { 1.1, 1.0, 1.0, 3.1, 1.0, 0.8, 1.0, 0.9 };
             var alignments = new[]
             {
                 ParagraphAlignment.Left,
@@ -55,7 +59,7 @@ namespace Reporting.Pdf.Reports
                 ParagraphAlignment.Center,
             };
 
-            var builder = ReportTableBuilder.Create(section, widths, headers, alignments);
+            var builder = ReportTableBuilder.Create(section, GetContentWidthCm(), weights, headers, alignments);
 
             foreach (var group in model.CustomerGroups)
             {

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using MigraDoc.DocumentObjectModel;
 using Reporting.Core.Models;
+using Reporting.Pdf.Assets;
 using Reporting.Pdf.Components;
 using Reporting.Pdf.Styles;
 using Reporting.Pdf.Templates;
@@ -18,13 +19,16 @@ namespace Reporting.Pdf.Reports
                 : "All Dates";
             string region = string.IsNullOrEmpty(model.RegionFilter) ? "All Regions" : model.RegionFilter;
 
+            var lines = new List<string> { $"{region} — {dateRange}" };
+            if (!string.IsNullOrEmpty(model.PreparedBy))
+                lines.Add($"Prepared by: {model.PreparedBy}   |   Ref: RPT-SLS-001   |   Commercial — Confidential");
+
             return new ReportMetadata
             {
-                ReportTitle     = "Sales Summary Report",
-                Subtitle        = $"{region} — {dateRange}",
-                ReportReference = "RPT-SLS-001",
-                PreparedBy      = model.PreparedBy,
-                Classification  = "Commercial — Confidential",
+                ReportTitle  = "Sales Summary Report",
+                HeaderLines  = lines,
+                LogoPath     = LogoProvider.GetPath(),
+                LogoWidthCm  = 3.5,
             };
         }
 
@@ -39,13 +43,13 @@ namespace Reporting.Pdf.Reports
                     ? $"{model.TotalGrossProfit / model.TotalRevenue:P1}"
                     : "N/A",
             };
-            SummaryPanel.Add(section, summary);
+            SummaryPanel.Add(section, summary, GetContentWidthCm());
 
             var heading = section.AddParagraph("Sales Detail");
             heading.Style = ReportStyles.SectionHeading;
 
-            double[] widths  = { 2.5, 5.0, 4.0, 2.5, 2.5, 2.5, 2.5, 2.5 };
             string[] headers = { "Date", "Product", "Sales Rep", "Region", "Units", "Unit Price", "Revenue £", "Gross Profit £" };
+            double[] weights = { 1.0, 2.2, 1.7, 1.0, 0.8, 1.2, 1.2, 1.2 };
             var alignments = new[]
             {
                 ParagraphAlignment.Left,
@@ -58,7 +62,7 @@ namespace Reporting.Pdf.Reports
                 ParagraphAlignment.Right,
             };
 
-            var builder = ReportTableBuilder.Create(section, widths, headers, alignments);
+            var builder = ReportTableBuilder.Create(section, GetContentWidthCm(), weights, headers, alignments);
 
             foreach (var item in model.Items)
             {

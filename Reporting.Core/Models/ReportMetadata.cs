@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Reporting.Core.Models
 {
@@ -31,5 +32,17 @@ namespace Reporting.Core.Models
 
         /// <summary>Width (cm) to render the logo at. Defaults to 3 cm.</summary>
         public double LogoWidthCm { get; set; } = 3.0;
+
+        /// <summary>
+        /// Optional lines rendered below the report title in the page header.
+        /// Each entry becomes one subtitle-styled line. Leave empty for a clean title-only header.
+        /// </summary>
+        public List<string> HeaderLines { get; set; } = new List<string>();
+
+        /// <summary>Application name shown in the footer left. Defaults to "Reporting Demo".</summary>
+        public string AppName { get; set; } = "Reporting Demo";
+
+        /// <summary>Application version shown in the footer left alongside <see cref="AppName"/>. Defaults to "1.0".</summary>
+        public string AppVersion { get; set; } = "1.0";
     }
 }

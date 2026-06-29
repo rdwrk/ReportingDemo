@@ -7,6 +7,8 @@ namespace Reporting.Pdf.Components
     /// <summary>
     /// Fluent builder for styled MigraDoc data tables.
     /// Handles alternating row shading, group header rows, and total rows.
+    /// Column widths are specified as relative weights and scaled proportionally
+    /// to the available content width, so tables always fill the page exactly.
     /// Obtain an instance via <see cref="Create"/>.
     /// </summary>
     public class ReportTableBuilder
@@ -20,35 +22,49 @@ namespace Reporting.Pdf.Components
         }
 
         /// <summary>
-        /// Creates a new table in <paramref name="section"/>, adds the column definitions and
-        /// a repeating heading row styled with <see cref="ReportStyles.TableHeader"/>.
+        /// Creates a new table in <paramref name="section"/>, derives absolute column widths
+        /// by scaling <paramref name="colWeights"/> proportionally to <paramref name="totalWidthCm"/>,
+        /// and adds a repeating heading row styled with <see cref="ReportStyles.TableHeader"/>.
         /// </summary>
         /// <param name="section">Section to add the table to.</param>
-        /// <param name="colWidthsCm">Width of each column in centimetres.</param>
+        /// <param name="totalWidthCm">
+        /// Total available width in centimetres. Pass <c>GetContentWidthCm()</c> from the
+        /// report builder so the table always spans the full content area regardless of page
+        /// size, orientation, or margin changes.
+        /// </param>
+        /// <param name="colWeights">
+        /// Relative weight for each column. Values are proportional to one another —
+        /// a weight of 2 produces a column twice as wide as a weight of 1.
+        /// The weights do not need to sum to any particular number.
+        /// </param>
         /// <param name="headers">Header label for each column.</param>
         /// <param name="alignments">Optional per-column paragraph alignment; defaults to left.</param>
         /// <returns>A configured <see cref="ReportTableBuilder"/> ready to receive data rows.</returns>
-        public static ReportTableBuilder Create(Section section, double[] colWidthsCm, string[] headers,
-            ParagraphAlignment[] alignments = null)
+        public static ReportTableBuilder Create(Section section, double totalWidthCm, double[] colWeights,
+            string[] headers, ParagraphAlignment[] alignments = null)
         {
-            var table = section.AddTable();
-            table.Borders.Width    = 0;
-            table.Borders.Color    = Color.Parse(ReportStyles.ColourMidGrey);
-            table.BottomPadding    = Unit.FromPoint(2);
-            table.TopPadding       = Unit.FromPoint(2);
-            table.LeftPadding      = Unit.FromPoint(4);
-            table.RightPadding     = Unit.FromPoint(4);
-            table.Style            = ReportStyles.TableBody;
-            table.KeepTogether     = false;
+            double totalWeight = 0;
+            foreach (var w in colWeights) totalWeight += w;
 
-            foreach (var w in colWidthsCm)
-                table.AddColumn(Unit.FromCentimeter(w)).Format.Alignment = ParagraphAlignment.Left;
+            var table = section.AddTable();
+            table.Borders.Width = 0;
+            table.Borders.Color = Color.Parse(ReportStyles.ColourMidGrey);
+            table.BottomPadding = Unit.FromPoint(2);
+            table.TopPadding    = Unit.FromPoint(2);
+            table.LeftPadding   = Unit.FromPoint(4);
+            table.RightPadding  = Unit.FromPoint(4);
+            table.Style         = ReportStyles.TableBody;
+            table.KeepTogether  = false;
+
+            foreach (var w in colWeights)
+                table.AddColumn(Unit.FromCentimeter(w / totalWeight * totalWidthCm))
+                     .Format.Alignment = ParagraphAlignment.Left;
 
             var hdrRow = table.AddRow();
-            hdrRow.HeadingFormat  = true;
-            hdrRow.Shading.Color  = Color.Parse(ReportStyles.ColourNavy);
-            hdrRow.TopPadding     = Unit.FromPoint(4);
-            hdrRow.BottomPadding  = Unit.FromPoint(4);
+            hdrRow.HeadingFormat = true;
+            hdrRow.Shading.Color = Color.Parse(ReportStyles.ColourNavy);
+            hdrRow.TopPadding    = Unit.FromPoint(4);
+            hdrRow.BottomPadding = Unit.FromPoint(4);
 
             for (int i = 0; i < headers.Length; i++)
             {
@@ -135,9 +151,9 @@ namespace Reporting.Pdf.Components
                 if (valIdx < values.Length && values[valIdx] != null)
                 {
                     var vp = row.Cells[i].AddParagraph(values[valIdx]);
-                    vp.Style              = ReportStyles.TableTotal;
-                    vp.Format.Alignment   = ParagraphAlignment.Right;
-                    vp.Format.Font.Color  = Color.Parse(ReportStyles.ColourWhite);
+                    vp.Style             = ReportStyles.TableTotal;
+                    vp.Format.Alignment  = ParagraphAlignment.Right;
+                    vp.Format.Font.Color = Color.Parse(ReportStyles.ColourWhite);
                 }
                 valIdx++;
             }

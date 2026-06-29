@@ -16,17 +16,22 @@ namespace Reporting.Pdf.Components
         /// </summary>
         /// <param name="section">The MigraDoc section to append the panel to.</param>
         /// <param name="items">Ordered dictionary of label → value strings to display.</param>
-        public static void Add(Section section, Dictionary<string, string> items)
+        /// <param name="totalWidthCm">Total width of the panel in centimetres; should match the page content width so the panel aligns with the data table.</param>
+        public static void Add(Section section, Dictionary<string, string> items, double totalWidthCm = 14.0)
         {
+            double colW = totalWidthCm / 4.0;
+
             var table = section.AddTable();
             table.Borders.Width = 0;
             table.BottomPadding = 0;
             table.TopPadding    = 0;
+            table.LeftPadding   = Unit.FromPoint(4);
+            table.RightPadding  = Unit.FromPoint(4);
 
-            table.AddColumn(Unit.FromCentimeter(3.5));
-            table.AddColumn(Unit.FromCentimeter(3.5));
-            table.AddColumn(Unit.FromCentimeter(3.5));
-            table.AddColumn(Unit.FromCentimeter(3.5));
+            table.AddColumn(Unit.FromCentimeter(colW));
+            table.AddColumn(Unit.FromCentimeter(colW));
+            table.AddColumn(Unit.FromCentimeter(colW));
+            table.AddColumn(Unit.FromCentimeter(colW));
 
             var keys   = new List<string>(items.Keys);
             var values = new List<string>(items.Values);
