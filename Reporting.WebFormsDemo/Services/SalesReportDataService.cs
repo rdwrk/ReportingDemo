@@ -1,16 +1,16 @@
 using System;
 using System.Collections.Generic;
-using Reporting.Core.Interfaces;
 using Reporting.Core.Models;
 using Reporting.Core.Templates;
 
 namespace Reporting.WebFormsDemo.Services
 {
     /// <summary>
-    /// Generates 120 seeded random sales lines for the Sales Summary report.
-    /// The seed is fixed so generated data is consistent across requests.
+    /// Demo data service: generates 120 seeded random sales lines.
+    /// In production replace this with a database query and map the results
+    /// directly into <see cref="SalesReportModel"/>.
     /// </summary>
-    public class SalesReportDataService : IReportDataService<SalesReportModel>
+    public class SalesReportDataService
     {
         private static readonly string[] Products =
         {
@@ -29,18 +29,13 @@ namespace Reporting.WebFormsDemo.Services
             "North", "South", "East", "West", "Midlands",
         };
 
-        /// <inheritdoc />
-        public SalesReportModel GetModel(ReportRequest request)
+        /// <summary>Returns a populated <see cref="SalesReportModel"/> for the given parameters.</summary>
+        public SalesReportModel GetModel(DateTime? dateFrom, DateTime? dateTo, string region = null, string preparedBy = null)
         {
-            var rng      = new Random(42);
-            var dateFrom = request.DateFrom ?? DateTime.Today.AddMonths(-3);
-            var dateTo   = request.DateTo   ?? DateTime.Today;
-            var span     = (dateTo - dateFrom).TotalDays;
-
-            string region     = null;
-            string preparedBy = null;
-            request.Parameters.TryGetValue("region",     out region);
-            request.Parameters.TryGetValue("preparedBy", out preparedBy);
+            var rng  = new Random(42);
+            var from = dateFrom ?? DateTime.Today.AddMonths(-3);
+            var to   = dateTo   ?? DateTime.Today;
+            var span = (to - from).TotalDays;
 
             var items = new List<SalesLineItem>();
 
@@ -62,14 +57,14 @@ namespace Reporting.WebFormsDemo.Services
                     UnitsSold   = units,
                     UnitPrice   = unitPrice,
                     CostOfGoods = Math.Round(unitPrice * (decimal)(rng.NextDouble() * 0.4 + 0.3), 2) * units,
-                    SaleDate    = dateFrom.AddDays(rng.NextDouble() * span),
+                    SaleDate    = from.AddDays(rng.NextDouble() * span),
                 });
             }
 
             return new SalesReportModel
             {
-                DateFrom     = dateFrom,
-                DateTo       = dateTo,
+                DateFrom     = from,
+                DateTo       = to,
                 RegionFilter = region,
                 PreparedBy   = preparedBy ?? "System",
                 Items        = items,

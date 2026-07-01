@@ -1,16 +1,16 @@
 using System;
 using System.Collections.Generic;
-using Reporting.Core.Interfaces;
 using Reporting.Core.Models;
 using Reporting.Core.Templates;
 
 namespace Reporting.WebFormsDemo.Services
 {
     /// <summary>
-    /// Generates seeded random invoice data for the Invoice Summary report.
-    /// Produces 5 customer groups with 8–20 invoices each.
+    /// Demo data service: generates 5 customer groups with 8–20 invoices each.
+    /// In production replace this with a database query and map the results
+    /// directly into <see cref="InvoiceReportModel"/>.
     /// </summary>
-    public class InvoiceReportDataService : IReportDataService<InvoiceReportModel>
+    public class InvoiceReportDataService
     {
         private static readonly string[] Customers =
         {
@@ -35,15 +35,12 @@ namespace Reporting.WebFormsDemo.Services
             "Data migration services", "API access - tier 2",
         };
 
-        /// <inheritdoc />
-        public InvoiceReportModel GetModel(ReportRequest request)
+        /// <summary>Returns a populated <see cref="InvoiceReportModel"/> for the given parameters.</summary>
+        public InvoiceReportModel GetModel(DateTime? dateFrom, DateTime? dateTo, string preparedBy = null)
         {
-            var rng      = new Random(99);
-            var dateFrom = request.DateFrom ?? DateTime.Today.AddMonths(-3);
-            var dateTo   = request.DateTo   ?? DateTime.Today;
-
-            string preparedBy = null;
-            request.Parameters.TryGetValue("preparedBy", out preparedBy);
+            var rng  = new Random(99);
+            var from = dateFrom ?? DateTime.Today.AddMonths(-3);
+            var to   = dateTo   ?? DateTime.Today;
 
             var     groups        = new List<CustomerInvoiceGroup>();
             decimal grandNet      = 0, grandVat = 0, grandGross = 0, outstanding = 0;
@@ -64,8 +61,8 @@ namespace Reporting.WebFormsDemo.Services
                     var line = new InvoiceLine
                     {
                         InvoiceNumber = string.Format("INV-{0:D5}", c * 100 + i + 1),
-                        InvoiceDate   = dateFrom.AddDays(rng.NextDouble() * 60),
-                        DueDate       = dateFrom.AddDays(rng.NextDouble() * 60 + 30),
+                        InvoiceDate   = from.AddDays(rng.NextDouble() * 60),
+                        DueDate       = from.AddDays(rng.NextDouble() * 60 + 30),
                         Description   = Descriptions[rng.Next(Descriptions.Length)],
                         NetAmount     = net,
                         VatAmount     = vat,
@@ -99,8 +96,8 @@ namespace Reporting.WebFormsDemo.Services
 
             return new InvoiceReportModel
             {
-                DateFrom          = dateFrom,
-                DateTo            = dateTo,
+                DateFrom          = from,
+                DateTo            = to,
                 PreparedBy        = preparedBy ?? "System",
                 CustomerGroups    = groups,
                 TotalInvoiceCount = totalInvoices,

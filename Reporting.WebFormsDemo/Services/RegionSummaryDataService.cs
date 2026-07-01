@@ -1,25 +1,24 @@
 using System;
 using System.Collections.Generic;
-using Reporting.Core.Interfaces;
 using Reporting.Core.Models;
 using Reporting.Core.Templates;
 
 namespace Reporting.WebFormsDemo.Services
 {
     /// <summary>
-    /// Generates the Region Performance Overview by aggregating the same seeded
-    /// sales data used by <see cref="SalesReportDataService"/> into per-region buckets.
-    /// No request parameters are used — the report always covers the full dataset.
+    /// Demo data service: aggregates seeded sales data into per-region totals.
+    /// In production replace this with a database query and map the results
+    /// directly into <see cref="RegionSummaryReportModel"/>.
     /// </summary>
-    public class RegionSummaryDataService : IReportDataService<RegionSummaryReportModel>
+    public class RegionSummaryDataService
     {
         private static readonly string[] Regions =
         {
             "East", "Midlands", "North", "South", "West",
         };
 
-        /// <inheritdoc />
-        public RegionSummaryReportModel GetModel(ReportRequest request)
+        /// <summary>Returns a populated <see cref="RegionSummaryReportModel"/> covering all regions.</summary>
+        public RegionSummaryReportModel GetModel()
         {
             var rng = new Random(42);
 

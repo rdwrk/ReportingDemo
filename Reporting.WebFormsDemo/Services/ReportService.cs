@@ -1,5 +1,4 @@
 using System;
-using Reporting.Core.Models;
 using Reporting.Core.Templates;
 using Reporting.Pdf;
 using Reporting.Pdf.Reports;
@@ -16,7 +15,7 @@ namespace Reporting.WebFormsDemo.Services
         /// <summary>
         /// Generates a PDF for the named report.
         /// </summary>
-        /// <param name="reportName">Case-insensitive key: "sales" or "invoice".</param>
+        /// <param name="reportName">Case-insensitive key: "sales", "invoice", or "region-summary".</param>
         /// <param name="dateFrom">ISO date string for period start.</param>
         /// <param name="dateTo">ISO date string for period end.</param>
         /// <param name="filter">Optional region filter (sales report only).</param>
@@ -25,38 +24,29 @@ namespace Reporting.WebFormsDemo.Services
         public ReportResult Generate(string reportName, string dateFrom, string dateTo,
                                      string filter, string preparedBy)
         {
-            var request = new ReportRequest
-            {
-                DateFrom = TryParse(dateFrom),
-                DateTo   = TryParse(dateTo),
-                Filter   = filter,
-            };
-
-            if (!string.IsNullOrEmpty(preparedBy))
-                request.Parameters["preparedBy"] = preparedBy;
-            if (!string.IsNullOrEmpty(filter))
-                request.Parameters["region"] = filter;
+            var from = TryParse(dateFrom);
+            var to   = TryParse(dateTo);
 
             switch (reportName.ToLowerInvariant())
             {
                 case "sales":
                     byte[] salesBytes = _renderer.BuildAndRender(
                         new SalesReportBuilder(),
-                        new SalesReportDataService().GetModel(request));
+                        new SalesReportDataService().GetModel(from, to, filter, preparedBy));
                     return new ReportResult(salesBytes,
                         string.Format("SalesSummary_{0:yyyyMMdd}.pdf", DateTime.Today));
 
                 case "invoice":
                     byte[] invBytes = _renderer.BuildAndRender(
                         new InvoiceReportBuilder(),
-                        new InvoiceReportDataService().GetModel(request));
+                        new InvoiceReportDataService().GetModel(from, to, preparedBy));
                     return new ReportResult(invBytes,
                         string.Format("InvoiceSummary_{0:yyyyMMdd}.pdf", DateTime.Today));
 
                 case "region-summary":
                     byte[] rgnBytes = _renderer.BuildAndRender(
                         new RegionSummaryReportBuilder(),
-                        new RegionSummaryDataService().GetModel(request));
+                        new RegionSummaryDataService().GetModel());
                     return new ReportResult(rgnBytes,
                         string.Format("RegionPerformance_{0:yyyyMMdd}.pdf", DateTime.Today));
 
