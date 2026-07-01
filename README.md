@@ -22,17 +22,31 @@ ReportingDemo.sln
 
 Defines the shared contracts used across all projects.
 
+**Interfaces** (`Reporting.Core/Interfaces/`)
+
 | Type | Purpose |
 |------|---------|
 | `IReportModel` | Marker interface for all report model classes |
 | `IReportBuilder<TModel>` | Converts a model into a MigraDoc `Document` |
 | `IReportRenderer` | Renders a `Document` to a `byte[]` PDF |
-| `IReportDataService<TModel>` | Fetches or generates data for a given `ReportRequest` |
-| `ReportRequest` | Carries date range, filter, and arbitrary key/value parameters |
+
+**Models** (`Reporting.Core/Models/`) — raw data entities, one class per file
+
+| Type | Purpose |
+|------|---------|
 | `ReportMetadata` | Title, optional header lines, logo path, app name/version, timestamp |
-| `SalesReportModel` / `SalesLineItem` | Sales summary report data |
-| `InvoiceReportModel` / `CustomerInvoiceGroup` / `InvoiceLine` | Invoice report data |
-| `RegionSummaryReportModel` / `RegionRow` | Region performance overview data |
+| `SalesLineItem` | One line of sales data; exposes `Revenue` and `GrossProfit` display expressions |
+| `InvoiceLine` | One invoice line; exposes `GrossAmount` display expression |
+| `CustomerInvoiceGroup` | Customer with pre-calculated subtotals (net, VAT, gross) |
+| `RegionRow` | Aggregated region data; exposes `Margin` display expression |
+
+**Templates** (`Reporting.Core/Templates/`) — `IReportModel` implementations, one class per report
+
+| Type | Purpose |
+|------|---------|
+| `SalesReportModel` | Sales report root — holds `List<SalesLineItem>` and derived totals |
+| `InvoiceReportModel` | Invoice report root — holds customer groups and pre-stored grand totals |
+| `RegionSummaryReportModel` | Region report root — holds `List<RegionRow>` and derived grand totals |
 
 ### Reporting.Pdf
 
@@ -220,7 +234,7 @@ The default logo is a 200×56 px PNG (navy rounded rectangle, "RD" in white, "RE
    - Override `Orientation` if landscape is needed.
    - In `GetMetadata()`, set `HeaderLines` with any per-report context lines, and set `LogoPath = LogoProvider.GetPath()` to include the logo.
    - In `BuildContent()`, pass `GetContentWidthCm()` to `ReportTableBuilder.Create()` and `SummaryPanel.Add()`.
-3. **Create a data service** in the web project's `Services\` folder — implement `IReportDataService<TModel>`.
+3. **Create a data service** in the web project's `Services\` folder. Give `GetModel()` explicit typed parameters matching what the report needs (e.g. `GetModel(DateTime? dateFrom, DateTime? dateTo, string region)`). No interface to implement — the method signature is whatever the report requires.
 4. **Register the report** — add a `case` to `ReportService.Generate()` in each web project.
 5. **Add a page:**
    - WebDemo: a Razor Page (`.cshtml` + `.cshtml.cs`). For a parameter-free report, set `PdfUrl` in `OnGet()` and render the iframe directly — no form needed.
@@ -233,6 +247,9 @@ The default logo is a 200×56 px PNG (navy rounded rectangle, "RD" in white, "RE
 - `Reporting.Core` and `Reporting.Pdf` target `netstandard2.0`, making them compatible with both .NET Framework 4.8 and .NET 8 without modification.
 - `WindowsFontResolver` is registered once in `PdfReportRenderer`'s static constructor. PDFsharp on .NET Core does not read GDI+ system fonts automatically, so this is required.
 - `PdfReportRenderer.BuildAndRender<TModel>()` keeps web layers fully decoupled from MigraDoc — neither web project needs to reference the `Document` type directly.
+- Data services have no shared interface — each exposes a `GetModel()` method with explicit typed parameters matching what that report needs. In real usage, data comes from a database query and is mapped directly to the report model; there is no generic request bag or parameter dictionary.
+- `Reporting.Core/Models/` contains raw data entities (one class per file). `Reporting.Core/Templates/` contains `IReportModel` implementations that hold the report-level aggregations. This split scales cleanly to 50+ reports without any single file growing large.
 - `Reporting.WebFormsDemo` must reference `PDFsharp-MigraDoc` directly (in addition to the project references) because old-style `.csproj` files do not propagate transitive NuGet dependencies from `netstandard2.0` projects.
+- `Reporting.WebFormsDemo` uses an old-style WAP `.csproj` that requires every `.cs` file to have an explicit `<Compile>` entry — unlike the SDK-style WebDemo project which discovers `.cs` files automatically.
 - Table column headers repeat on every page break (`HeadingFormat = true`).
 - Group header rows use `KeepWith = 2` to prevent orphaned headers at page boundaries.
