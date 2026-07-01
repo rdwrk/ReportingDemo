@@ -262,7 +262,9 @@
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\ReportService.cs" />
-    <Compile Include="Services\ReportDataServices.cs" />
+    <Compile Include="Services\SalesReportDataService.cs" />
+    <Compile Include="Services\InvoiceReportDataService.cs" />
+    <Compile Include="Services\RegionSummaryDataService.cs" />
     <Compile Include="SalesReport.aspx.cs">
       <DependentUpon>SalesReport.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
