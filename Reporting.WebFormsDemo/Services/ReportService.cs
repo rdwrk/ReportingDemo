@@ -1,5 +1,6 @@
 using System;
 using Reporting.Core.Models;
+using Reporting.Core.Templates;
 using Reporting.Pdf;
 using Reporting.Pdf.Reports;
 

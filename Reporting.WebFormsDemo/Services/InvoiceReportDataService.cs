@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Reporting.Core.Interfaces;
 using Reporting.Core.Models;
+using Reporting.Core.Templates;
 
 namespace Reporting.WebFormsDemo.Services
 {

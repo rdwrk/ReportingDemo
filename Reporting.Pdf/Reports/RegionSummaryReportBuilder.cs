@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using MigraDoc.DocumentObjectModel;
 using Reporting.Core.Models;
+using Reporting.Core.Templates;
 using Reporting.Pdf.Assets;
 using Reporting.Pdf.Components;
 using Reporting.Pdf.Styles;
