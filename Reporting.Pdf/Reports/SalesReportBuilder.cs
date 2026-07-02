@@ -10,6 +10,12 @@ using Reporting.Pdf.Templates;
 
 namespace Reporting.Pdf.Reports
 {
+    /// <summary>
+    /// Builds the Sales Summary Report as a landscape A4 PDF.
+    /// Produces a summary panel (total lines, revenue, gross profit, margin) followed by
+    /// a paginated detail table of individual sales lines grouped by the current filter.
+    /// Renders no data rows when <see cref="SalesReportModel.Items"/> is null or empty.
+    /// </summary>
     public class SalesReportBuilder : MasterReportTemplate<SalesReportModel>
     {
         protected override Orientation Orientation => Orientation.Landscape;

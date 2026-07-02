@@ -10,6 +10,12 @@ using Reporting.Pdf.Templates;
 
 namespace Reporting.Pdf.Reports
 {
+    /// <summary>
+    /// Builds the Invoice Summary Report as a landscape A4 PDF.
+    /// Groups invoice lines by customer, with a per-customer subtotal row and a grand total row.
+    /// Overdue invoice lines receive a pale-orange cell background and red status text.
+    /// Renders no data rows when <see cref="InvoiceReportModel.CustomerGroups"/> is null or empty.
+    /// </summary>
     public class InvoiceReportBuilder : MasterReportTemplate<InvoiceReportModel>
     {
         protected override Orientation Orientation => Orientation.Landscape;

@@ -10,6 +10,7 @@ A PDF reporting solution built with **MigraDoc + PDFsharp 6.2.4**. The core PDF 
 ReportingDemo.sln
 ├── Reporting.Core           (netstandard2.0)  – Contracts and models
 ├── Reporting.Pdf            (netstandard2.0)  – PDF builders and renderer
+├── Reporting.Tests          (net8.0)          – xUnit test project for Core and Pdf
 ├── Reporting.WebDemo        (net8.0)          – ASP.NET Core Razor Pages host
 └── Reporting.WebFormsDemo   (net4.8)          – ASP.NET Web Forms host
 ```
@@ -61,9 +62,18 @@ Implements PDF generation on top of MigraDoc/PDFsharp.
 | `ReportTableBuilder` | Fluent builder for data tables with proportional column widths, alternating row shading, group headers, total rows, and repeating column headers on page breaks |
 | `SummaryPanel` | Renders a key/value summary block as a two-pair-per-row table |
 | `LogoProvider` | Extracts the embedded default logo PNG to a temp file and returns its path for MigraDoc image loading |
-| `SalesReportBuilder` | Landscape A4; filter-driven detail table with summary panel |
-| `InvoiceReportBuilder` | Landscape A4; invoices grouped by customer with subtotals |
-| `RegionSummaryReportBuilder` | Portrait A4; parameter-free overview aggregated by region |
+| `SalesReportBuilder` | Landscape A4; filter-driven detail table with summary panel; renders empty table when `Items` is null or empty |
+| `InvoiceReportBuilder` | Landscape A4; invoices grouped by customer with subtotals; overdue lines get orange/red highlighting; renders empty table when `CustomerGroups` is null or empty |
+| `RegionSummaryReportBuilder` | Portrait A4; parameter-free overview aggregated by region; renders empty table when `Rows` is null or empty |
+
+### Reporting.Tests
+
+xUnit test project targeting net8.0. Covers `Reporting.Core` and `Reporting.Pdf` with 156 tests across 18 files.
+
+| Folder | What is tested |
+|--------|----------------|
+| `Core/` | Default property values, computed expressions (`Revenue`, `GrossProfit`, `GrossAmount`, `Margin`, derived totals), and null-safety guards on all model and template classes |
+| `Pdf/` | `WindowsFontResolver` face-key mapping and TTF loading; `ReportStyles` constant values and style registration; `ReportTableBuilder` row creation, alternating shading, group headers, total rows, and the column-count bounds guard; `SummaryPanel` even/odd item layouts; `LogoProvider` extraction and caching; all three report builders across every header/date/filter/data branch; `PdfReportRenderer` end-to-end `%PDF` output |
 
 ### Reporting.WebDemo
 
@@ -95,6 +105,46 @@ ASP.NET Web Forms application targeting .NET Framework 4.8, hosted on IIS Expres
 | `InvoiceReport.aspx` | Filter form (date range, prepared-by) + inline PDF iframe |
 | `RegionSummary.aspx` | No form — PDF renders automatically on page load |
 | `Site.Master` | Master page with navy nav bar and custom CSS |
+
+---
+
+## Testing
+
+`Reporting.Tests` is an xUnit project targeting net8.0 that provides near-complete coverage of `Reporting.Core` and `Reporting.Pdf`.
+
+### Running the tests
+
+```bash
+cd Reporting.Tests
+dotnet test
+```
+
+Or from the repository root:
+
+```bash
+dotnet test Reporting.Tests/Reporting.Tests.csproj
+```
+
+### Running with coverage
+
+```bash
+dotnet test Reporting.Tests/Reporting.Tests.csproj --collect:"XPlat Code Coverage"
+```
+
+Coverage reports land in `Reporting.Tests/TestResults/`. Use [ReportGenerator](https://github.com/danielpalme/ReportGenerator) to convert them to HTML:
+
+```bash
+reportgenerator -reports:"Reporting.Tests/TestResults/**/*.xml" -targetdir:"coverage-report" -reporttypes:Html
+```
+
+### Test organisation
+
+| Folder | What is tested |
+|--------|----------------|
+| `Core/` | Default property values, computed expressions (`Revenue`, `GrossProfit`, `GrossAmount`, `Margin`, totals), and null-safety guards on all model and template classes |
+| `Pdf/` | `WindowsFontResolver` face-key mapping and TTF loading; `ReportStyles` constant values and `Apply()` registration; `ReportTableBuilder` row creation, alternating shading, group headers, total rows, and the column-count bounds guard; `SummaryPanel` even/odd item layouts; `LogoProvider` extraction and caching; all three report builders across every header/date/filter/data branch; `PdfReportRenderer` end-to-end PDF byte output |
+
+Builder tests render actual PDFs (via `PdfReportRenderer`) and assert the output starts with the `%PDF` magic bytes, verifying the full generation pipeline rather than just document assembly.
 
 ---
 

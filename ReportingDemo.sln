@@ -10,6 +10,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Reporting.WebDemo", "Report
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Reporting.WebFormsDemo", "Reporting.WebFormsDemo\Reporting.WebFormsDemo.csproj", "{D20CA7DD-F978-4205-B5D4-FDCB97FEC5F7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Reporting.Tests", "Reporting.Tests\Reporting.Tests.csproj", "{E4F5A6B7-C8D9-0123-DEF0-456789012345}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -32,6 +34,10 @@ Global
 		{D20CA7DD-F978-4205-B5D4-FDCB97FEC5F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D20CA7DD-F978-4205-B5D4-FDCB97FEC5F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D20CA7DD-F978-4205-B5D4-FDCB97FEC5F7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E4F5A6B7-C8D9-0123-DEF0-456789012345}.Debug|Any CPU.ActiveCfg = Debug|AnyCPU
+		{E4F5A6B7-C8D9-0123-DEF0-456789012345}.Debug|Any CPU.Build.0 = Debug|AnyCPU
+		{E4F5A6B7-C8D9-0123-DEF0-456789012345}.Release|Any CPU.ActiveCfg = Release|AnyCPU
+		{E4F5A6B7-C8D9-0123-DEF0-456789012345}.Release|Any CPU.Build.0 = Release|AnyCPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
