@@ -1,17 +1,40 @@
 using System;
 using System.Collections.Generic;
 using Reporting.Core.Models;
-using Reporting.Core.Templates;
 
 namespace Reporting.WebFormsDemo.Services
 {
     /// <summary>
-    /// Demo data service: generates 5 customer groups with 8–20 invoices each.
-    /// In production replace this with a database query and map the results
-    /// directly into <see cref="InvoiceReportModel"/>.
+    /// DAL service: returns pre-aggregated customer invoice groups with per-customer subtotals
+    /// and report-level grand totals for the given date range.
+    /// The caller is responsible for assembling the populated <see cref="Reporting.Core.Templates.InvoiceReportModel"/>
+    /// from the returned <see cref="InvoiceData"/> and any additional metadata (prepared-by, date range, etc.).
+    /// In production replace this with a database query and GROUP BY aggregation.
     /// </summary>
     public class InvoiceReportDataService
     {
+        /// <summary>Carries the raw aggregated data returned by <see cref="GetCustomerGroups"/>.</summary>
+        public sealed class InvoiceData
+        {
+            /// <summary>Invoice lines grouped by customer, each with pre-calculated subtotals.</summary>
+            public List<CustomerInvoiceGroup> CustomerGroups    { get; set; }
+
+            /// <summary>Total number of individual invoice lines across all customers.</summary>
+            public int     TotalInvoiceCount { get; set; }
+
+            /// <summary>Sum of all net amounts across all customers.</summary>
+            public decimal GrandTotalNet     { get; set; }
+
+            /// <summary>Sum of all VAT amounts across all customers.</summary>
+            public decimal GrandTotalVat     { get; set; }
+
+            /// <summary>Sum of all gross amounts across all customers.</summary>
+            public decimal GrandTotalGross   { get; set; }
+
+            /// <summary>Sum of gross amounts for lines with status "Due" or "Overdue".</summary>
+            public decimal TotalOutstanding  { get; set; }
+        }
+
         private static readonly string[] Customers =
         {
             "Acme Corporation", "Globex Industries", "Initech Solutions",
@@ -35,8 +58,13 @@ namespace Reporting.WebFormsDemo.Services
             "Data migration services", "API access - tier 2",
         };
 
-        /// <summary>Returns a populated <see cref="InvoiceReportModel"/> for the given parameters.</summary>
-        public InvoiceReportModel GetModel(DateTime? dateFrom, DateTime? dateTo, string preparedBy = null)
+        /// <summary>
+        /// Returns pre-aggregated customer invoice data for the given period.
+        /// Pass the result to the caller to build a <see cref="Reporting.Core.Templates.InvoiceReportModel"/>.
+        /// </summary>
+        /// <param name="dateFrom">Start of the reporting period; defaults to three months ago if null.</param>
+        /// <param name="dateTo">End of the reporting period; defaults to today if null.</param>
+        public InvoiceData GetCustomerGroups(DateTime? dateFrom, DateTime? dateTo)
         {
             var rng  = new Random(99);
             var from = dateFrom ?? DateTime.Today.AddMonths(-3);
@@ -94,11 +122,8 @@ namespace Reporting.WebFormsDemo.Services
                 totalInvoices += count;
             }
 
-            return new InvoiceReportModel
+            return new InvoiceData
             {
-                DateFrom          = from,
-                DateTo            = to,
-                PreparedBy        = preparedBy ?? "System",
                 CustomerGroups    = groups,
                 TotalInvoiceCount = totalInvoices,
                 GrandTotalNet     = grandNet,

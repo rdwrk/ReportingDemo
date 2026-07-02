@@ -1,13 +1,12 @@
 using System;
 using System.Web.UI;
-using Reporting.WebFormsDemo.Services;
 
 namespace Reporting.WebFormsDemo
 {
     /// <summary>
     /// Code-behind for the Sales Summary Report page.
     /// Populates default filter values on first load and, on postback,
-    /// builds a PDF stream URL and reveals the inline viewer iframe.
+    /// sets the iframe source to <c>SalesPdf.ashx</c> and reveals the inline viewer.
     /// </summary>
     public partial class SalesReport : Page
     {
@@ -25,14 +24,13 @@ namespace Reporting.WebFormsDemo
         }
 
         /// <summary>
-        /// Handles the View PDF button click. Assembles the query string for
-        /// <c>StreamPdf.ashx</c> from the current filter values and sets the
-        /// iframe source, making the viewer panel visible.
+        /// Handles the View PDF button click. Builds the query string for <c>SalesPdf.ashx</c>
+        /// from the current filter values and reveals the inline viewer iframe.
         /// </summary>
         protected void btnView_Click(object sender, EventArgs e)
         {
             string url = string.Format(
-                "~/StreamPdf.ashx?report=sales&inline=true&dateFrom={0}&dateTo={1}&filter={2}&preparedBy={3}",
+                "~/SalesPdf.ashx?inline=true&dateFrom={0}&dateTo={1}&filter={2}&preparedBy={3}",
                 Uri.EscapeDataString(txtDateFrom.Text),
                 Uri.EscapeDataString(txtDateTo.Text),
                 Uri.EscapeDataString(ddlRegion.SelectedValue),

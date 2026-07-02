@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
 using Reporting.Core.Models;
-using Reporting.Core.Templates;
 
 namespace Reporting.WebDemo.Services
 {
     /// <summary>
-    /// Demo data service: aggregates seeded sales data into per-region totals.
-    /// In production replace this with a database query and map the results
-    /// directly into <see cref="RegionSummaryReportModel"/>.
+    /// DAL service: returns per-region aggregated rows derived from seeded sales data.
+    /// The caller is responsible for assembling the populated <see cref="Reporting.Core.Templates.RegionSummaryReportModel"/>
+    /// from the returned rows.
+    /// In production replace this with a database query mapped directly to <see cref="RegionRow"/>.
     /// </summary>
     public class RegionSummaryDataService
     {
@@ -17,8 +17,11 @@ namespace Reporting.WebDemo.Services
             "East", "Midlands", "North", "South", "West",
         };
 
-        /// <summary>Returns a populated <see cref="RegionSummaryReportModel"/> covering all regions.</summary>
-        public RegionSummaryReportModel GetModel()
+        /// <summary>
+        /// Returns one aggregated row per region.
+        /// Pass the result to the caller to build a <see cref="Reporting.Core.Templates.RegionSummaryReportModel"/>.
+        /// </summary>
+        public List<RegionRow> GetRows()
         {
             var rng = new Random(42);
 
@@ -51,7 +54,7 @@ namespace Reporting.WebDemo.Services
                 });
             }
 
-            return new RegionSummaryReportModel { Rows = rows };
+            return rows;
         }
     }
 }

@@ -7,7 +7,7 @@ using Xunit;
 namespace Reporting.Tests.Core
 {
     /// <summary>
-    /// Verifies <see cref="SalesReportModel"/> computed totals and null-safety guards.
+    /// Verifies <see cref="SalesReportModel"/> default values, computed totals, and null-safety guards.
     /// </summary>
     public class SalesReportModelTests
     {
@@ -17,6 +17,13 @@ namespace Reporting.Tests.Core
             var model = new SalesReportModel();
             Assert.NotNull(model.Items);
             Assert.Empty(model.Items);
+        }
+
+        [Fact]
+        public void Metadata_DefaultsToNonNullInstance()
+        {
+            var model = new SalesReportModel();
+            Assert.NotNull(model.Metadata);
         }
 
         [Fact]
@@ -69,22 +76,25 @@ namespace Reporting.Tests.Core
         }
 
         [Fact]
-        public void AllPropertiesCanBeSet()
+        public void MetadataContextFields_CanBeSet()
         {
             var from  = new DateTime(2024, 1, 1);
             var to    = new DateTime(2024, 3, 31);
             var model = new SalesReportModel
             {
-                DateFrom     = from,
-                DateTo       = to,
-                RegionFilter = "North",
-                PreparedBy   = "Alice",
+                Metadata = new ReportMetadata
+                {
+                    PeriodFrom = from,
+                    PeriodTo   = to,
+                    Filter     = "North",
+                    PreparedBy = "Alice",
+                }
             };
 
-            Assert.Equal(from,    model.DateFrom);
-            Assert.Equal(to,      model.DateTo);
-            Assert.Equal("North", model.RegionFilter);
-            Assert.Equal("Alice", model.PreparedBy);
+            Assert.Equal(from,    model.Metadata.PeriodFrom);
+            Assert.Equal(to,      model.Metadata.PeriodTo);
+            Assert.Equal("North", model.Metadata.Filter);
+            Assert.Equal("Alice", model.Metadata.PreparedBy);
         }
     }
 }

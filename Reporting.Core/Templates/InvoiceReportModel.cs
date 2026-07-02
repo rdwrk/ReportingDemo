@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Reporting.Core.Interfaces;
 using Reporting.Core.Models;
@@ -6,21 +5,21 @@ using Reporting.Core.Models;
 namespace Reporting.Core.Templates
 {
     /// <summary>
-    /// Assembled report model for the Invoice Summary report.
-    /// Passed to <c>InvoiceReportBuilder</c> after population by the data service.
-    /// Grand totals are pre-calculated by the data service and stored directly,
+    /// Report model for the Invoice Summary report.
+    /// Contains only the raw data entities (<see cref="CustomerGroups"/> and grand totals).
+    /// All report context (date range, prepared-by) belongs in <see cref="Metadata"/>
+    /// and is set by the calling code before the model is passed to the renderer.
+    /// Grand totals are pre-calculated by the DAL service and stored directly,
     /// as the source lines are grouped and the flat total is not re-derivable cheaply.
     /// </summary>
     public class InvoiceReportModel : IReportModel
     {
-        /// <summary>Start of the reporting period.</summary>
-        public DateTime? DateFrom { get; set; }
-
-        /// <summary>End of the reporting period.</summary>
-        public DateTime? DateTo { get; set; }
-
-        /// <summary>Person or team that requested the report, shown in the page header.</summary>
-        public string PreparedBy { get; set; }
+        /// <summary>
+        /// Report-level context set by the calling code from user input.
+        /// The builder reads <see cref="ReportMetadata.PeriodFrom"/>, <see cref="ReportMetadata.PeriodTo"/>,
+        /// and <see cref="ReportMetadata.PreparedBy"/> to format the page header.
+        /// </summary>
+        public ReportMetadata Metadata { get; set; } = new ReportMetadata();
 
         /// <summary>One group per customer, ordered as returned by the data service.</summary>
         public List<CustomerInvoiceGroup> CustomerGroups { get; set; } = new List<CustomerInvoiceGroup>();

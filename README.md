@@ -81,14 +81,14 @@ ASP.NET Core 8 Razor Pages web application hosted on Kestrel.
 
 | Type | Purpose |
 |------|---------|
-| `Program.cs` | Registers services, maps Razor Pages, exposes `/reports/stream` minimal API endpoint |
-| `ReportService` | Orchestrates data retrieval and PDF rendering; returns `(byte[], fileName)` |
-| `SalesReportDataService` | Generates 120 seeded random sales lines |
-| `InvoiceReportDataService` | Generates 5 customer groups with 8–20 invoices each |
-| `RegionSummaryDataService` | Aggregates seeded sales data into per-region totals |
-| `SalesReport.cshtml` | Filter form (date range, region, prepared-by) + inline PDF iframe |
-| `InvoiceReport.cshtml` | Filter form (date range, prepared-by) + inline PDF iframe |
-| `RegionSummary.cshtml` | No form — PDF renders automatically on page load |
+| `Program.cs` | Registers services, maps Razor Pages, and exposes `GET /reports/region-summary` for the parameter-free region PDF |
+| `ReportService` | Typed PDF renderer — `GenerateSales`, `GenerateInvoice`, `GenerateRegionSummary`; accepts a pre-built Core model and returns `(byte[], fileName)` |
+| `SalesReportDataService` | DAL service — `GetLines(from, to, region)` returns `List<SalesLineItem>` |
+| `InvoiceReportDataService` | DAL service — `GetCustomerGroups(from, to)` returns `InvoiceData` (groups + pre-computed grand totals) |
+| `RegionSummaryDataService` | DAL service — `GetRows()` returns `List<RegionRow>` |
+| `SalesReport.cshtml` | Filter form (date range, region, prepared-by); form targets the named iframe so the POST response is the PDF |
+| `InvoiceReport.cshtml` | Filter form (date range, prepared-by); same iframe-target pattern |
+| `RegionSummary.cshtml` | No form — iframe src points to `GET /reports/region-summary` |
 
 ### Reporting.WebFormsDemo
 
@@ -96,11 +96,13 @@ ASP.NET Web Forms application targeting .NET Framework 4.8, hosted on IIS Expres
 
 | Type | Purpose |
 |------|---------|
-| `StreamPdf.ashx` | Generic HTTP handler — streams PDF bytes with `Content-Disposition: inline` or `attachment` |
-| `ReportService` | Orchestrates data retrieval and PDF rendering; returns a `ReportResult` value object |
-| `SalesReportDataService` | Generates 120 seeded random sales lines |
-| `InvoiceReportDataService` | Generates 5 customer groups with 8–20 invoices each |
-| `RegionSummaryDataService` | Aggregates seeded sales data into per-region totals |
+| `SalesPdf.ashx` | HTTP handler for the Sales Summary Report — fetches lines from `SalesReportDataService`, assembles the model, renders PDF |
+| `InvoicePdf.ashx` | HTTP handler for the Invoice Summary Report — fetches groups from `InvoiceReportDataService`, assembles the model, renders PDF |
+| `RegionPdf.ashx` | HTTP handler for the Region Performance Overview — fetches rows from `RegionSummaryDataService`, assembles the model, renders PDF |
+| `ReportService` | Typed PDF renderer — `GenerateSales`, `GenerateInvoice`, `GenerateRegionSummary`; accepts a pre-built Core model and returns a `ReportResult` value object |
+| `SalesReportDataService` | DAL service — `GetLines(from, to, region)` returns `List<SalesLineItem>` |
+| `InvoiceReportDataService` | DAL service — `GetCustomerGroups(from, to)` returns `InvoiceData` (groups + pre-computed grand totals) |
+| `RegionSummaryDataService` | DAL service — `GetRows()` returns `List<RegionRow>` |
 | `SalesReport.aspx` | Filter form (date range, region, prepared-by) + inline PDF iframe |
 | `InvoiceReport.aspx` | Filter form (date range, prepared-by) + inline PDF iframe |
 | `RegionSummary.aspx` | No form — PDF renders automatically on page load |
@@ -187,27 +189,41 @@ Then open `http://localhost:5000/SalesReport`, `http://localhost:5000/InvoiceRep
 
 ---
 
-## PDF Stream Endpoints
+## PDF Endpoints
 
-Both web projects expose equivalent endpoints that accept the same query-string parameters.
+### Reporting.WebDemo
 
-| Project | Endpoint |
-|---------|----------|
-| WebDemo | `GET /reports/stream` |
-| WebFormsDemo | `GET /StreamPdf.ashx` |
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/SalesReport` | Form submission — fetches sales lines, assembles model, returns PDF |
+| `POST` | `/InvoiceReport` | Form submission — fetches invoice groups, assembles model, returns PDF |
+| `GET`  | `/reports/region-summary` | Parameter-free — fetches region rows, assembles model, returns PDF |
 
-| Parameter | Values | Description |
-|-----------|--------|-------------|
-| `report` | `sales`, `invoice`, `region-summary` | Which report to generate |
-| `inline` | `true`, `false` | `true` = display in browser; `false` = force download |
-| `dateFrom` | `yyyy-MM-dd` | Start of reporting period (sales and invoice only) |
-| `dateTo` | `yyyy-MM-dd` | End of reporting period (sales and invoice only) |
-| `filter` | string | Region filter (sales report only) |
-| `preparedBy` | string | Name shown in the report header (sales and invoice only) |
+The Sales and Invoice Razor Pages use `<form method="post" target="pdfFrame">` so the POST response (the raw PDF) loads directly into the named iframe. No separate stream URL is needed.
+
+### Reporting.WebFormsDemo
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/SalesPdf.ashx` | Fetches sales lines, assembles model, streams Sales Summary PDF |
+| `GET` | `/InvoicePdf.ashx` | Fetches invoice groups, assembles model, streams Invoice Summary PDF |
+| `GET` | `/RegionPdf.ashx` | Fetches region rows, assembles model, streams Region Overview PDF |
+
+**`SalesPdf.ashx` parameters:**
+
+| Parameter | Description |
+|-----------|-------------|
+| `inline` | `true` = display in browser; `false` = force download |
+| `dateFrom` | ISO date (yyyy-MM-dd) for period start |
+| `dateTo` | ISO date (yyyy-MM-dd) for period end |
+| `filter` | Optional region filter; capped at 100 characters |
+| `preparedBy` | Name shown in the report header; capped at 150 characters |
+
+**`InvoicePdf.ashx` parameters:** same as above minus `filter`.
+
+**`RegionPdf.ashx`:** no parameters required.
 
 Response: `Content-Type: application/pdf` with `Content-Disposition: inline` or `attachment`.
-
-**Validation:** `report` is required — omitting it returns `400 Bad Request`. `filter` is capped at 100 characters and `preparedBy` at 150 characters; values exceeding these limits are silently truncated.
 
 ---
 
@@ -281,16 +297,16 @@ The default logo is a 200×56 px PNG (navy rounded rectangle, "RD" in white, "RE
 
 ## Adding a New Report
 
-1. **Define the model** in `Reporting.Core\Models\` — implement `IReportModel`.
+1. **Define the model** in `Reporting.Core\Models\` — add any new data entity classes and a new `IReportModel` implementation in `Reporting.Core\Templates\`.
 2. **Create a builder** in `Reporting.Pdf\Reports\` — extend `MasterReportTemplate<TModel>`.
    - Override `Orientation` if landscape is needed.
    - In `GetMetadata()`, set `HeaderLines` with any per-report context lines, and set `LogoPath = LogoProvider.GetPath()` to include the logo.
    - In `BuildContent()`, pass `GetContentWidthCm()` to `ReportTableBuilder.Create()` and `SummaryPanel.Add()`.
-3. **Create a data service** in the web project's `Services\` folder. Give `GetModel()` explicit typed parameters matching what the report needs (e.g. `GetModel(DateTime? dateFrom, DateTime? dateTo, string region)`). No interface to implement — the method signature is whatever the report requires.
-4. **Register the report** — add a `case` to `ReportService.Generate()` in each web project.
+3. **Create a DAL service** in the web project's `Services\` folder. The method returns raw data entities — **not** a pre-built Core model. Example: `GetLines(DateTime? from, DateTime? to, string region)` returning `List<MyLineItem>`. The caller assembles the Core model from the returned data and any form metadata (dates, prepared-by, etc.).
+4. **Add a typed render method** to `ReportService` in each web project: `GenerateMyReport(MyReportModel model)` returning `(byte[], fileName)` or `ReportResult`.
 5. **Add a page:**
-   - WebDemo: a Razor Page (`.cshtml` + `.cshtml.cs`). For a parameter-free report, set `PdfUrl` in `OnGet()` and render the iframe directly — no form needed.
-   - WebFormsDemo: an `.aspx` page + code-behind + designer; register all three files in the `.csproj`. For a parameter-free report, set `pdfFrame.Src` in `Page_Load`.
+   - **WebDemo:** a Razor Page (`.cshtml` + `.cshtml.cs`). Inject the DAL service and `ReportService`. `OnPost` fetches raw data, assembles the Core model, calls `GenerateMyReport`, and returns `File(bytes, "application/pdf")`. Set `target="pdfFrame"` on the form and add `<iframe name="pdfFrame">` so the POST response loads in the iframe. For a parameter-free report, register a `GET` endpoint in `Program.cs` instead and point the iframe `src` at it.
+   - **WebFormsDemo:** an `.aspx` page + code-behind + designer (register all in the `.csproj`); a dedicated `.ashx` + `.ashx.cs` pair (also register both in the `.csproj`). The ASHX handler calls the DAL service, assembles the Core model with a `ReportMetadata`, and calls the typed `ReportService` method. The ASPX code-behind builds the ASHX URL and points the iframe at it — no generic dispatcher involved.
 
 ---
 
@@ -299,7 +315,8 @@ The default logo is a 200×56 px PNG (navy rounded rectangle, "RD" in white, "RE
 - `Reporting.Core` and `Reporting.Pdf` target `netstandard2.0`, making them compatible with both .NET Framework 4.8 and .NET 8 without modification.
 - `WindowsFontResolver` is registered once in `PdfReportRenderer`'s static constructor. PDFsharp on .NET Core does not read GDI+ system fonts automatically, so this is required.
 - `PdfReportRenderer.BuildAndRender<TModel>()` keeps web layers fully decoupled from MigraDoc — neither web project needs to reference the `Document` type directly.
-- Data services have no shared interface — each exposes a `GetModel()` method with explicit typed parameters matching what that report needs. In real usage, data comes from a database query and is mapped directly to the report model; there is no generic request bag or parameter dictionary.
+- Data services have no shared interface — each exposes a typed `Get*()` method (e.g. `GetLines`, `GetCustomerGroups`, `GetRows`) that returns raw data entities. The calling code (Razor Page handler or ASHX handler) assembles the Core model from those entities plus any user-supplied metadata such as `PreparedBy` or date range. `ReportService` in each web project then accepts the fully-populated Core model and renders it to PDF bytes — it never touches the database.
+- This separation mirrors the real-world pattern where a DAL layer returns query results (rows, groups, aggregates) and the application layer maps them into the domain model before handing off to a downstream service.
 - `Reporting.Core/Models/` contains raw data entities (one class per file). `Reporting.Core/Templates/` contains `IReportModel` implementations that hold the report-level aggregations. This split scales cleanly to 50+ reports without any single file growing large.
 - `Reporting.WebFormsDemo` must reference `PDFsharp-MigraDoc` directly (in addition to the project references) because old-style `.csproj` files do not propagate transitive NuGet dependencies from `netstandard2.0` projects.
 - `Reporting.WebFormsDemo` uses an old-style WAP `.csproj` that requires every `.cs` file to have an explicit `<Compile>` entry — unlike the SDK-style WebDemo project which discovers `.cs` files automatically.

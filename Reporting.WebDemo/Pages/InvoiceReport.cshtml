@@ -4,7 +4,7 @@
 
 <div class="card">
     <h2>Invoice Summary Report</h2>
-    <form method="post">
+    <form method="post" target="pdfFrame">
         <label>Date From</label>
         <input type="date" name="DateFrom" value="@Model.DateFrom" />
         <label>Date To</label>
@@ -17,7 +17,4 @@
     </form>
 </div>
 
-@if (!string.IsNullOrEmpty(Model.PdfUrl))
-{
-    <iframe class="pdf-viewer" src="@Model.PdfUrl"></iframe>
-}
+<iframe class="pdf-viewer" name="pdfFrame"></iframe>

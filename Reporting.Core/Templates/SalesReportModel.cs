@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Reporting.Core.Interfaces;
@@ -7,23 +6,19 @@ using Reporting.Core.Models;
 namespace Reporting.Core.Templates
 {
     /// <summary>
-    /// Assembled report model for the Sales Summary report.
-    /// Passed to <c>SalesReportBuilder</c> after population by the data service.
-    /// Grand totals are display expressions derived from <see cref="Items"/>.
+    /// Report model for the Sales Summary report.
+    /// Contains only the raw data entities (<see cref="Items"/>) and derived display totals.
+    /// All report context (date range, region filter, prepared-by) belongs in <see cref="Metadata"/>
+    /// and is set by the calling code before the model is passed to the renderer.
     /// </summary>
     public class SalesReportModel : IReportModel
     {
-        /// <summary>Start of the reporting period.</summary>
-        public DateTime? DateFrom { get; set; }
-
-        /// <summary>End of the reporting period.</summary>
-        public DateTime? DateTo { get; set; }
-
-        /// <summary>Region filter applied to this model. Null or empty means all regions.</summary>
-        public string RegionFilter { get; set; }
-
-        /// <summary>Person or team that requested the report, shown in the page header.</summary>
-        public string PreparedBy { get; set; }
+        /// <summary>
+        /// Report-level context set by the calling code from user input.
+        /// The builder reads <see cref="ReportMetadata.PeriodFrom"/>, <see cref="ReportMetadata.PeriodTo"/>,
+        /// <see cref="ReportMetadata.Filter"/>, and <see cref="ReportMetadata.PreparedBy"/> to format the page header.
+        /// </summary>
+        public ReportMetadata Metadata { get; set; } = new ReportMetadata();
 
         /// <summary>All sales lines included in this report.</summary>
         public List<SalesLineItem> Items { get; set; } = new List<SalesLineItem>();

@@ -81,5 +81,50 @@ namespace Reporting.Tests.Core
             Assert.Equal("3.0",          meta.AppVersion);
             Assert.Equal(stamp,          meta.GeneratedDate);
         }
+
+        // ── Report context fields ─────────────────────────────────────────────────
+
+        [Fact]
+        public void PreparedBy_DefaultsToNull()
+        {
+            Assert.Null(new ReportMetadata().PreparedBy);
+        }
+
+        [Fact]
+        public void PeriodFrom_DefaultsToNull()
+        {
+            Assert.Null(new ReportMetadata().PeriodFrom);
+        }
+
+        [Fact]
+        public void PeriodTo_DefaultsToNull()
+        {
+            Assert.Null(new ReportMetadata().PeriodTo);
+        }
+
+        [Fact]
+        public void Filter_DefaultsToNull()
+        {
+            Assert.Null(new ReportMetadata().Filter);
+        }
+
+        [Fact]
+        public void ContextFields_CanBeSet()
+        {
+            var from = new DateTime(2024, 1, 1);
+            var to   = new DateTime(2024, 3, 31);
+            var meta = new ReportMetadata
+            {
+                PreparedBy = "Alice",
+                PeriodFrom = from,
+                PeriodTo   = to,
+                Filter     = "North",
+            };
+
+            Assert.Equal("Alice", meta.PreparedBy);
+            Assert.Equal(from,    meta.PeriodFrom);
+            Assert.Equal(to,      meta.PeriodTo);
+            Assert.Equal("North", meta.Filter);
+        }
     }
 }

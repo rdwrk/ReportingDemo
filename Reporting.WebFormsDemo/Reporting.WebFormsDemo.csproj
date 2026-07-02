@@ -243,7 +243,9 @@
     <Content Include="SalesReport.aspx" />
     <Content Include="InvoiceReport.aspx" />
     <Content Include="RegionSummary.aspx" />
-    <Content Include="StreamPdf.ashx" />
+    <Content Include="SalesPdf.ashx" />
+    <Content Include="InvoicePdf.ashx" />
+    <Content Include="RegionPdf.ashx" />
     <Content Include="Web.config" />
     <Content Include="Bundle.config" />
   </ItemGroup>
@@ -286,8 +288,16 @@
     <Compile Include="RegionSummary.aspx.designer.cs">
       <DependentUpon>RegionSummary.aspx</DependentUpon>
     </Compile>
-    <Compile Include="StreamPdf.ashx.cs">
-      <DependentUpon>StreamPdf.ashx</DependentUpon>
+    <Compile Include="SalesPdf.ashx.cs">
+      <DependentUpon>SalesPdf.ashx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="InvoicePdf.ashx.cs">
+      <DependentUpon>InvoicePdf.ashx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="RegionPdf.ashx.cs">
+      <DependentUpon>RegionPdf.ashx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
     <Compile Include="Site.Master.cs">

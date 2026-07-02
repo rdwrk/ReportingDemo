@@ -15,6 +15,9 @@ namespace Reporting.Pdf.Reports
     /// Groups invoice lines by customer, with a per-customer subtotal row and a grand total row.
     /// Overdue invoice lines receive a pale-orange cell background and red status text.
     /// Renders no data rows when <see cref="InvoiceReportModel.CustomerGroups"/> is null or empty.
+    /// Header lines are formatted from <see cref="ReportMetadata.PeriodFrom"/>,
+    /// <see cref="ReportMetadata.PeriodTo"/>, and <see cref="ReportMetadata.PreparedBy"/>
+    /// on <see cref="InvoiceReportModel.Metadata"/>.
     /// </summary>
     public class InvoiceReportBuilder : MasterReportTemplate<InvoiceReportModel>
     {
@@ -22,13 +25,15 @@ namespace Reporting.Pdf.Reports
 
         protected override ReportMetadata GetMetadata(InvoiceReportModel model)
         {
-            string subtitle = model.DateFrom.HasValue && model.DateTo.HasValue
-                ? $"By Customer — {model.DateFrom:dd MMM yyyy} to {model.DateTo:dd MMM yyyy}"
+            var ctx = model.Metadata ?? new ReportMetadata();
+
+            string subtitle = ctx.PeriodFrom.HasValue && ctx.PeriodTo.HasValue
+                ? $"By Customer — {ctx.PeriodFrom:dd MMM yyyy} to {ctx.PeriodTo:dd MMM yyyy}"
                 : "By Customer — All Dates";
 
             var lines = new List<string> { subtitle };
-            if (!string.IsNullOrEmpty(model.PreparedBy))
-                lines.Add($"Prepared by: {model.PreparedBy}   |   Ref: RPT-INV-001   |   Finance — Confidential");
+            if (!string.IsNullOrEmpty(ctx.PreparedBy))
+                lines.Add($"Prepared by: {ctx.PreparedBy}   |   Ref: RPT-INV-001   |   Finance — Confidential");
 
             return new ReportMetadata
             {

@@ -6,13 +6,21 @@ using Reporting.Core.Models;
 namespace Reporting.Core.Templates
 {
     /// <summary>
-    /// Assembled report model for the Region Performance Overview.
-    /// Passed to <c>RegionSummaryReportBuilder</c> after population by the data service.
-    /// Grand totals are display expressions derived from <see cref="Rows"/>.
-    /// No request parameters are used — the report always covers the full dataset.
+    /// Report model for the Region Performance Overview.
+    /// Contains only the raw data entities (<see cref="Rows"/>) and derived display totals.
+    /// No filter parameters are required — the report always covers the full dataset.
+    /// <see cref="Metadata"/> is available for setting AppName, AppVersion, or other footer overrides
+    /// but requires no context fields (no date range or prepared-by for this report type).
     /// </summary>
     public class RegionSummaryReportModel : IReportModel
     {
+        /// <summary>
+        /// Report-level context available to the builder. No context fields are required
+        /// for this report type; may be used to override <see cref="ReportMetadata.AppName"/> or
+        /// <see cref="ReportMetadata.AppVersion"/> if needed.
+        /// </summary>
+        public ReportMetadata Metadata { get; set; } = new ReportMetadata();
+
         /// <summary>One row per region, ordered alphabetically.</summary>
         public List<RegionRow> Rows { get; set; } = new List<RegionRow>();
 

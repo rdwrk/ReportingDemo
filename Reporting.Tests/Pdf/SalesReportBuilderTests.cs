@@ -36,21 +36,30 @@ namespace Reporting.Tests.Pdf
         [Fact]
         public void Build_WithPreparedBy_IncludesPreparedByHeaderLine()
         {
-            var model = new SalesReportModel { PreparedBy = "Alice" };
+            var model = new SalesReportModel
+            {
+                Metadata = new ReportMetadata { PreparedBy = "Alice" }
+            };
             AssertValidPdf(Render(model));
         }
 
         [Fact]
         public void Build_WithoutPreparedBy_OmitsPreparedByHeaderLine()
         {
-            var model = new SalesReportModel { PreparedBy = null };
+            var model = new SalesReportModel
+            {
+                Metadata = new ReportMetadata { PreparedBy = null }
+            };
             AssertValidPdf(Render(model));
         }
 
         [Fact]
         public void Build_WithEmptyPreparedBy_OmitsPreparedByHeaderLine()
         {
-            var model = new SalesReportModel { PreparedBy = string.Empty };
+            var model = new SalesReportModel
+            {
+                Metadata = new ReportMetadata { PreparedBy = string.Empty }
+            };
             AssertValidPdf(Render(model));
         }
 
@@ -61,8 +70,11 @@ namespace Reporting.Tests.Pdf
         {
             var model = new SalesReportModel
             {
-                DateFrom = new DateTime(2024, 1, 1),
-                DateTo   = new DateTime(2024, 3, 31),
+                Metadata = new ReportMetadata
+                {
+                    PeriodFrom = new DateTime(2024, 1, 1),
+                    PeriodTo   = new DateTime(2024, 3, 31),
+                }
             };
             AssertValidPdf(Render(model));
         }
@@ -70,15 +82,21 @@ namespace Reporting.Tests.Pdf
         [Fact]
         public void Build_WithNoDates_ShowsAllDatesInSubtitle()
         {
-            var model = new SalesReportModel { DateFrom = null, DateTo = null };
+            var model = new SalesReportModel
+            {
+                Metadata = new ReportMetadata { PeriodFrom = null, PeriodTo = null }
+            };
             AssertValidPdf(Render(model));
         }
 
         [Fact]
-        public void Build_WithOnlyDateFrom_ShowsAllDatesInSubtitle()
+        public void Build_WithOnlyPeriodFrom_ShowsAllDatesInSubtitle()
         {
             // Both must be set for the range to show; one-sided falls through to "All Dates".
-            var model = new SalesReportModel { DateFrom = new DateTime(2024, 1, 1), DateTo = null };
+            var model = new SalesReportModel
+            {
+                Metadata = new ReportMetadata { PeriodFrom = new DateTime(2024, 1, 1), PeriodTo = null }
+            };
             AssertValidPdf(Render(model));
         }
 
@@ -87,21 +105,30 @@ namespace Reporting.Tests.Pdf
         [Fact]
         public void Build_WithRegionFilter_ShowsRegionInSubtitle()
         {
-            var model = new SalesReportModel { RegionFilter = "North" };
+            var model = new SalesReportModel
+            {
+                Metadata = new ReportMetadata { Filter = "North" }
+            };
             AssertValidPdf(Render(model));
         }
 
         [Fact]
         public void Build_WithoutRegionFilter_ShowsAllRegionsInSubtitle()
         {
-            var model = new SalesReportModel { RegionFilter = null };
+            var model = new SalesReportModel
+            {
+                Metadata = new ReportMetadata { Filter = null }
+            };
             AssertValidPdf(Render(model));
         }
 
         [Fact]
         public void Build_WithEmptyRegionFilter_ShowsAllRegionsInSubtitle()
         {
-            var model = new SalesReportModel { RegionFilter = string.Empty };
+            var model = new SalesReportModel
+            {
+                Metadata = new ReportMetadata { Filter = string.Empty }
+            };
             AssertValidPdf(Render(model));
         }
 
@@ -141,10 +168,13 @@ namespace Reporting.Tests.Pdf
         {
             var model = new SalesReportModel
             {
-                DateFrom     = new DateTime(2024, 1, 1),
-                DateTo       = new DateTime(2024, 12, 31),
-                RegionFilter = "Midlands",
-                PreparedBy   = "Bob",
+                Metadata = new ReportMetadata
+                {
+                    PeriodFrom = new DateTime(2024, 1, 1),
+                    PeriodTo   = new DateTime(2024, 12, 31),
+                    Filter     = "Midlands",
+                    PreparedBy = "Bob",
+                },
                 Items = new List<SalesLineItem>
                 {
                     new SalesLineItem
@@ -169,6 +199,14 @@ namespace Reporting.Tests.Pdf
                     },
                 }
             };
+            AssertValidPdf(Render(model));
+        }
+
+        [Fact]
+        public void Build_WithNullMetadata_DoesNotThrow()
+        {
+            // Builder falls back to new ReportMetadata() when model.Metadata is null.
+            var model = new SalesReportModel { Metadata = null };
             AssertValidPdf(Render(model));
         }
     }

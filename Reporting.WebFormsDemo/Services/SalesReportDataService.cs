@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
 using Reporting.Core.Models;
-using Reporting.Core.Templates;
 
 namespace Reporting.WebFormsDemo.Services
 {
     /// <summary>
-    /// Demo data service: generates 120 seeded random sales lines.
-    /// In production replace this with a database query and map the results
-    /// directly into <see cref="SalesReportModel"/>.
+    /// DAL service: returns raw sales line items for a given date range and optional region filter.
+    /// The caller is responsible for assembling the populated <see cref="Reporting.Core.Templates.SalesReportModel"/>
+    /// from the returned lines and any additional metadata (prepared-by, date range, etc.).
+    /// In production replace this with a database query mapped directly to <see cref="SalesLineItem"/>.
     /// </summary>
     public class SalesReportDataService
     {
@@ -29,8 +29,14 @@ namespace Reporting.WebFormsDemo.Services
             "North", "South", "East", "West", "Midlands",
         };
 
-        /// <summary>Returns a populated <see cref="SalesReportModel"/> for the given parameters.</summary>
-        public SalesReportModel GetModel(DateTime? dateFrom, DateTime? dateTo, string region = null, string preparedBy = null)
+        /// <summary>
+        /// Returns raw sales line items for the given period and optional region filter.
+        /// Pass the result to the caller to build a <see cref="Reporting.Core.Templates.SalesReportModel"/>.
+        /// </summary>
+        /// <param name="dateFrom">Start of the reporting period; defaults to three months ago if null.</param>
+        /// <param name="dateTo">End of the reporting period; defaults to today if null.</param>
+        /// <param name="region">Optional region filter; null or empty returns all regions.</param>
+        public List<SalesLineItem> GetLines(DateTime? dateFrom, DateTime? dateTo, string region = null)
         {
             var rng  = new Random(42);
             var from = dateFrom ?? DateTime.Today.AddMonths(-3);
@@ -61,14 +67,7 @@ namespace Reporting.WebFormsDemo.Services
                 });
             }
 
-            return new SalesReportModel
-            {
-                DateFrom     = from,
-                DateTo       = to,
-                RegionFilter = region,
-                PreparedBy   = preparedBy ?? "System",
-                Items        = items,
-            };
+            return items;
         }
     }
 }

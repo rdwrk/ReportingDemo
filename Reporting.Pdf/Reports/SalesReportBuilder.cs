@@ -15,6 +15,9 @@ namespace Reporting.Pdf.Reports
     /// Produces a summary panel (total lines, revenue, gross profit, margin) followed by
     /// a paginated detail table of individual sales lines grouped by the current filter.
     /// Renders no data rows when <see cref="SalesReportModel.Items"/> is null or empty.
+    /// Header lines are formatted from <see cref="ReportMetadata.PeriodFrom"/>,
+    /// <see cref="ReportMetadata.PeriodTo"/>, <see cref="ReportMetadata.Filter"/>,
+    /// and <see cref="ReportMetadata.PreparedBy"/> on <see cref="SalesReportModel.Metadata"/>.
     /// </summary>
     public class SalesReportBuilder : MasterReportTemplate<SalesReportModel>
     {
@@ -22,21 +25,23 @@ namespace Reporting.Pdf.Reports
 
         protected override ReportMetadata GetMetadata(SalesReportModel model)
         {
-            string dateRange = model.DateFrom.HasValue && model.DateTo.HasValue
-                ? $"{model.DateFrom:dd MMM yyyy} to {model.DateTo:dd MMM yyyy}"
+            var ctx = model.Metadata ?? new ReportMetadata();
+
+            string dateRange = ctx.PeriodFrom.HasValue && ctx.PeriodTo.HasValue
+                ? $"{ctx.PeriodFrom:dd MMM yyyy} to {ctx.PeriodTo:dd MMM yyyy}"
                 : "All Dates";
-            string region = string.IsNullOrEmpty(model.RegionFilter) ? "All Regions" : model.RegionFilter;
+            string region = string.IsNullOrEmpty(ctx.Filter) ? "All Regions" : ctx.Filter;
 
             var lines = new List<string> { $"{region} — {dateRange}" };
-            if (!string.IsNullOrEmpty(model.PreparedBy))
-                lines.Add($"Prepared by: {model.PreparedBy}   |   Ref: RPT-SLS-001   |   Commercial — Confidential");
+            if (!string.IsNullOrEmpty(ctx.PreparedBy))
+                lines.Add($"Prepared by: {ctx.PreparedBy}   |   Ref: RPT-SLS-001   |   Commercial — Confidential");
 
             return new ReportMetadata
             {
-                ReportTitle  = "Sales Summary Report",
-                HeaderLines  = lines,
-                LogoPath     = LogoProvider.GetPath(),
-                LogoWidthCm  = 3.5,
+                ReportTitle = "Sales Summary Report",
+                HeaderLines = lines,
+                LogoPath    = LogoProvider.GetPath(),
+                LogoWidthCm = 3.5,
             };
         }
 

@@ -36,14 +36,20 @@ namespace Reporting.Tests.Pdf
         [Fact]
         public void Build_WithPreparedBy_IncludesPreparedByHeaderLine()
         {
-            var model = new InvoiceReportModel { PreparedBy = "Finance Team" };
+            var model = new InvoiceReportModel
+            {
+                Metadata = new ReportMetadata { PreparedBy = "Finance Team" }
+            };
             AssertValidPdf(Render(model));
         }
 
         [Fact]
         public void Build_WithoutPreparedBy_OmitsPreparedByHeaderLine()
         {
-            var model = new InvoiceReportModel { PreparedBy = null };
+            var model = new InvoiceReportModel
+            {
+                Metadata = new ReportMetadata { PreparedBy = null }
+            };
             AssertValidPdf(Render(model));
         }
 
@@ -54,8 +60,11 @@ namespace Reporting.Tests.Pdf
         {
             var model = new InvoiceReportModel
             {
-                DateFrom = new DateTime(2024, 1, 1),
-                DateTo   = new DateTime(2024, 6, 30),
+                Metadata = new ReportMetadata
+                {
+                    PeriodFrom = new DateTime(2024, 1, 1),
+                    PeriodTo   = new DateTime(2024, 6, 30),
+                }
             };
             AssertValidPdf(Render(model));
         }
@@ -63,7 +72,18 @@ namespace Reporting.Tests.Pdf
         [Fact]
         public void Build_WithNoDates_ShowsAllDatesSubtitle()
         {
-            var model = new InvoiceReportModel { DateFrom = null, DateTo = null };
+            var model = new InvoiceReportModel
+            {
+                Metadata = new ReportMetadata { PeriodFrom = null, PeriodTo = null }
+            };
+            AssertValidPdf(Render(model));
+        }
+
+        [Fact]
+        public void Build_WithNullMetadata_DoesNotThrow()
+        {
+            // Builder falls back to new ReportMetadata() when model.Metadata is null.
+            var model = new InvoiceReportModel { Metadata = null };
             AssertValidPdf(Render(model));
         }
 

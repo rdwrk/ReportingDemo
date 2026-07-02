@@ -6,59 +6,37 @@ using Reporting.Pdf.Reports;
 namespace Reporting.WebFormsDemo.Services
 {
     /// <summary>
-    /// Coordinates data retrieval and PDF generation. Called by <see cref="Reporting.WebFormsDemo.StreamPdf"/>.
+    /// Application-layer service that renders a pre-populated report model to PDF bytes.
+    /// The calling code (<see cref="Reporting.WebFormsDemo.StreamPdf"/>) is responsible for
+    /// fetching data from the appropriate DAL service and assembling the Core model before
+    /// calling these methods.
     /// </summary>
     public class ReportService
     {
         private readonly PdfReportRenderer _renderer = new PdfReportRenderer();
 
-        /// <summary>
-        /// Generates a PDF for the named report.
-        /// </summary>
-        /// <param name="reportName">Case-insensitive key: "sales", "invoice", or "region-summary".</param>
-        /// <param name="dateFrom">ISO date string for period start.</param>
-        /// <param name="dateTo">ISO date string for period end.</param>
-        /// <param name="filter">Optional region filter (sales report only).</param>
-        /// <param name="preparedBy">Name shown in the report header.</param>
+        /// <summary>Renders a <see cref="SalesReportModel"/> to PDF bytes.</summary>
         /// <returns>A <see cref="ReportResult"/> with raw PDF bytes and a suggested filename.</returns>
-        public ReportResult Generate(string reportName, string dateFrom, string dateTo,
-                                     string filter, string preparedBy)
+        public ReportResult GenerateSales(SalesReportModel model)
         {
-            var from = TryParse(dateFrom);
-            var to   = TryParse(dateTo);
-
-            switch (reportName.ToLowerInvariant())
-            {
-                case "sales":
-                    byte[] salesBytes = _renderer.BuildAndRender(
-                        new SalesReportBuilder(),
-                        new SalesReportDataService().GetModel(from, to, filter, preparedBy));
-                    return new ReportResult(salesBytes,
-                        string.Format("SalesSummary_{0:yyyyMMdd}.pdf", DateTime.Today));
-
-                case "invoice":
-                    byte[] invBytes = _renderer.BuildAndRender(
-                        new InvoiceReportBuilder(),
-                        new InvoiceReportDataService().GetModel(from, to, preparedBy));
-                    return new ReportResult(invBytes,
-                        string.Format("InvoiceSummary_{0:yyyyMMdd}.pdf", DateTime.Today));
-
-                case "region-summary":
-                    byte[] rgnBytes = _renderer.BuildAndRender(
-                        new RegionSummaryReportBuilder(),
-                        new RegionSummaryDataService().GetModel());
-                    return new ReportResult(rgnBytes,
-                        string.Format("RegionPerformance_{0:yyyyMMdd}.pdf", DateTime.Today));
-
-                default:
-                    throw new ArgumentException("Unknown report: " + reportName);
-            }
+            byte[] bytes = _renderer.BuildAndRender(new SalesReportBuilder(), model);
+            return new ReportResult(bytes, string.Format("SalesSummary_{0:yyyyMMdd}.pdf", DateTime.Today));
         }
 
-        private static DateTime? TryParse(string value)
+        /// <summary>Renders an <see cref="InvoiceReportModel"/> to PDF bytes.</summary>
+        /// <returns>A <see cref="ReportResult"/> with raw PDF bytes and a suggested filename.</returns>
+        public ReportResult GenerateInvoice(InvoiceReportModel model)
         {
-            DateTime d;
-            return DateTime.TryParse(value, out d) ? d : (DateTime?)null;
+            byte[] bytes = _renderer.BuildAndRender(new InvoiceReportBuilder(), model);
+            return new ReportResult(bytes, string.Format("InvoiceSummary_{0:yyyyMMdd}.pdf", DateTime.Today));
+        }
+
+        /// <summary>Renders a <see cref="RegionSummaryReportModel"/> to PDF bytes.</summary>
+        /// <returns>A <see cref="ReportResult"/> with raw PDF bytes and a suggested filename.</returns>
+        public ReportResult GenerateRegionSummary(RegionSummaryReportModel model)
+        {
+            byte[] bytes = _renderer.BuildAndRender(new RegionSummaryReportBuilder(), model);
+            return new ReportResult(bytes, string.Format("RegionPerformance_{0:yyyyMMdd}.pdf", DateTime.Today));
         }
     }
 

@@ -1,4 +1,5 @@
 using System;
+using Reporting.Core.Models;
 using Reporting.Core.Templates;
 using Xunit;
 
@@ -18,15 +19,17 @@ namespace Reporting.Tests.Core
         }
 
         [Fact]
-        public void AllPropertiesCanBeSet()
+        public void Metadata_DefaultsToNonNullInstance()
         {
-            var from  = new DateTime(2024, 1, 1);
-            var to    = new DateTime(2024, 6, 30);
+            var model = new InvoiceReportModel();
+            Assert.NotNull(model.Metadata);
+        }
+
+        [Fact]
+        public void DataPropertiesCanBeSet()
+        {
             var model = new InvoiceReportModel
             {
-                DateFrom          = from,
-                DateTo            = to,
-                PreparedBy        = "Bob",
                 TotalInvoiceCount = 25,
                 GrandTotalNet     = 10_000m,
                 GrandTotalVat     = 2_000m,
@@ -34,14 +37,31 @@ namespace Reporting.Tests.Core
                 TotalOutstanding  = 3_000m,
             };
 
-            Assert.Equal(from,     model.DateFrom);
-            Assert.Equal(to,       model.DateTo);
-            Assert.Equal("Bob",    model.PreparedBy);
             Assert.Equal(25,       model.TotalInvoiceCount);
             Assert.Equal(10_000m,  model.GrandTotalNet);
             Assert.Equal(2_000m,   model.GrandTotalVat);
             Assert.Equal(12_000m,  model.GrandTotalGross);
             Assert.Equal(3_000m,   model.TotalOutstanding);
+        }
+
+        [Fact]
+        public void MetadataContextFields_CanBeSet()
+        {
+            var from  = new DateTime(2024, 1, 1);
+            var to    = new DateTime(2024, 6, 30);
+            var model = new InvoiceReportModel
+            {
+                Metadata = new ReportMetadata
+                {
+                    PeriodFrom = from,
+                    PeriodTo   = to,
+                    PreparedBy = "Bob",
+                }
+            };
+
+            Assert.Equal(from,  model.Metadata.PeriodFrom);
+            Assert.Equal(to,    model.Metadata.PeriodTo);
+            Assert.Equal("Bob", model.Metadata.PreparedBy);
         }
     }
 }
