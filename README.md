@@ -157,6 +157,8 @@ Both web projects expose equivalent endpoints that accept the same query-string 
 
 Response: `Content-Type: application/pdf` with `Content-Disposition: inline` or `attachment`.
 
+**Validation:** `report` is required — omitting it returns `400 Bad Request`. `filter` is capped at 100 characters and `preparedBy` at 150 characters; values exceeding these limits are silently truncated.
+
 ---
 
 ## Available Reports
