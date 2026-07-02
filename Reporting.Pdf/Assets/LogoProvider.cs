@@ -12,41 +12,32 @@ namespace Reporting.Pdf.Assets
     /// </summary>
     public static class LogoProvider
     {
-        private static readonly object _lock    = new object();
-        private static string          _tempPath = null;
+        private static readonly Lazy<string> _path = new Lazy<string>(ExtractLogo);
 
         /// <summary>
         /// Returns the absolute path to the logo PNG, extracting it from the
         /// embedded resource to a temp file if this is the first call.
+        /// Thread-safe: extraction runs at most once via <see cref="Lazy{T}"/>.
         /// </summary>
-        public static string GetPath()
+        public static string GetPath() => _path.Value;
+
+        private static string ExtractLogo()
         {
-            if (_tempPath != null && File.Exists(_tempPath))
-                return _tempPath;
+            var assembly     = typeof(LogoProvider).GetTypeInfo().Assembly;
+            var resourceName = "Reporting.Pdf.Assets.logo.png";
 
-            lock (_lock)
+            using (var stream = assembly.GetManifestResourceStream(resourceName))
             {
-                if (_tempPath != null && File.Exists(_tempPath))
-                    return _tempPath;
+                if (stream == null)
+                    throw new InvalidOperationException(
+                        $"Embedded resource '{resourceName}' not found in {assembly.FullName}.");
 
-                var assembly     = typeof(LogoProvider).GetTypeInfo().Assembly;
-                var resourceName = "Reporting.Pdf.Assets.logo.png";
+                var path = Path.Combine(Path.GetTempPath(), "reporting_demo_logo.png");
+                using (var file = File.Create(path))
+                    stream.CopyTo(file);
 
-                using (var stream = assembly.GetManifestResourceStream(resourceName))
-                {
-                    if (stream == null)
-                        throw new InvalidOperationException(
-                            $"Embedded resource '{resourceName}' not found in {assembly.FullName}.");
-
-                    var path = Path.Combine(Path.GetTempPath(), "reporting_demo_logo.png");
-                    using (var file = File.Create(path))
-                        stream.CopyTo(file);
-
-                    _tempPath = path;
-                }
+                return path;
             }
-
-            return _tempPath;
         }
     }
 }
