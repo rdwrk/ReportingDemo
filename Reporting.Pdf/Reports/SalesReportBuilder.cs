@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using MigraDoc.DocumentObjectModel;
 using Reporting.Core.Models;
 using Reporting.Core.Templates;
@@ -65,7 +66,7 @@ namespace Reporting.Pdf.Reports
 
             var builder = ReportTableBuilder.Create(section, GetContentWidthCm(), weights, headers, alignments);
 
-            foreach (var item in model.Items)
+            foreach (var item in model.Items ?? Enumerable.Empty<SalesLineItem>())
             {
                 builder.AddRow(new[]
                 {

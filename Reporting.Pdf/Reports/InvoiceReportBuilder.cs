@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using MigraDoc.DocumentObjectModel;
 using Reporting.Core.Models;
 using Reporting.Core.Templates;
@@ -62,7 +63,7 @@ namespace Reporting.Pdf.Reports
 
             var builder = ReportTableBuilder.Create(section, GetContentWidthCm(), weights, headers, alignments);
 
-            foreach (var group in model.CustomerGroups)
+            foreach (var group in model.CustomerGroups ?? Enumerable.Empty<CustomerInvoiceGroup>())
             {
                 builder.AddGroupHeaderRow($"{group.CustomerName}  ({group.CustomerRef})");
 

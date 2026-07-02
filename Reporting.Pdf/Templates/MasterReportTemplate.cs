@@ -180,6 +180,7 @@ namespace Reporting.Pdf.Templates
         /// Returns the usable content width in centimetres based on the page size and margins.
         /// A4 landscape = 29.7 cm; A4 portrait = 21.0 cm.
         /// </summary>
+        // Assumes A4 page size (29.7 × 21.0 cm). Update if a subclass overrides PageFormat to non-A4.
         protected double GetContentWidthCm()
         {
             bool landscape = Orientation == Orientation.Landscape;

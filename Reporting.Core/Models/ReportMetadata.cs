@@ -10,7 +10,7 @@ namespace Reporting.Core.Models
     public class ReportMetadata
     {
         /// <summary>Main title displayed prominently in the page header.</summary>
-        public string ReportTitle { get; set; }
+        public string ReportTitle { get; set; } = string.Empty;
 
         /// <summary>
         /// Optional lines rendered below the title in the page header.

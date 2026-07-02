@@ -1,6 +1,7 @@
 using MigraDoc.DocumentObjectModel;
 using MigraDoc.DocumentObjectModel.Tables;
 using Reporting.Pdf.Styles;
+using System;
 
 namespace Reporting.Pdf.Components
 {
@@ -91,7 +92,7 @@ namespace Reporting.Pdf.Components
                 : Color.Parse(ReportStyles.ColourWhite);
             _altRow = !_altRow;
 
-            for (int i = 0; i < values.Length; i++)
+            for (int i = 0; i < Math.Min(values.Length, _table.Columns.Count); i++)
             {
                 var p = row.Cells[i].AddParagraph(values[i] ?? string.Empty);
                 p.Style = _altRow ? ReportStyles.TableBodyAlt : ReportStyles.TableBody;

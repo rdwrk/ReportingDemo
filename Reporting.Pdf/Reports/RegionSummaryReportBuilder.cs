@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using MigraDoc.DocumentObjectModel;
 using Reporting.Core.Models;
 using Reporting.Core.Templates;
@@ -32,7 +33,7 @@ namespace Reporting.Pdf.Reports
         {
             var summary = new Dictionary<string, string>
             {
-                ["Regions"]       = model.Rows.Count.ToString("N0"),
+                ["Regions"]       = (model.Rows?.Count ?? 0).ToString("N0"),
                 ["Total Lines"]   = model.GrandLineCount.ToString("N0"),
                 ["Total Revenue"] = $"£{model.GrandRevenue:N2}",
                 ["Overall Margin"] = $"{model.GrandMargin:P1}",
@@ -55,7 +56,7 @@ namespace Reporting.Pdf.Reports
 
             var builder = ReportTableBuilder.Create(section, GetContentWidthCm(), weights, headers, alignments);
 
-            foreach (var row in model.Rows)
+            foreach (var row in model.Rows ?? Enumerable.Empty<RegionRow>())
             {
                 builder.AddRow(new[]
                 {

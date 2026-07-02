@@ -255,3 +255,6 @@ The default logo is a 200×56 px PNG (navy rounded rectangle, "RD" in white, "RE
 - `Reporting.WebFormsDemo` uses an old-style WAP `.csproj` that requires every `.cs` file to have an explicit `<Compile>` entry — unlike the SDK-style WebDemo project which discovers `.cs` files automatically.
 - Table column headers repeat on every page break (`HeadingFormat = true`).
 - Group header rows use `KeepWith = 2` to prevent orphaned headers at page boundaries.
+- `MasterReportTemplate.GetContentWidthCm()` assumes A4 page dimensions (29.7 × 21.0 cm). If you add a report that overrides `PageFormat` to a non-A4 size, update this method accordingly.
+- `ReportTableBuilder.AddRow()` silently ignores values beyond the declared column count, preventing `IndexOutOfRangeException` if a caller passes too many cells.
+- All report builders guard against a null `Items` / `CustomerGroups` / `Rows` collection — an empty model renders a valid PDF with no data rows rather than throwing.
