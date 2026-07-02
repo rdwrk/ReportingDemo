@@ -33,6 +33,18 @@ namespace Reporting.WebFormsDemo
             string preparedBy = qs["preparedBy"] ?? string.Empty;
             bool   inline     = string.Equals(qs["inline"], "true", StringComparison.OrdinalIgnoreCase);
 
+            if (string.IsNullOrWhiteSpace(report))
+            {
+                context.Response.StatusCode  = 400;
+                context.Response.ContentType = "text/plain";
+                context.Response.Write("The 'report' query parameter is required.");
+                context.Response.End();
+                return;
+            }
+
+            if (filter.Length     > 100) filter     = filter.Substring(0, 100);
+            if (preparedBy.Length > 150) preparedBy = preparedBy.Substring(0, 150);
+
             try
             {
                 var result = new ReportService().Generate(report, dateFrom, dateTo, filter, preparedBy);

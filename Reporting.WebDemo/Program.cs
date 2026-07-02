@@ -18,6 +18,12 @@ app.MapGet("/reports/stream", (
     ReportService svc,
     HttpContext http) =>
 {
+    if (string.IsNullOrWhiteSpace(report))
+        return Results.BadRequest("The 'report' query parameter is required.");
+
+    if (filter     is { Length: > 100 }) filter     = filter[..100];
+    if (preparedBy is { Length: > 150 }) preparedBy = preparedBy[..150];
+
     try
     {
         var (bytes, fileName) = svc.Generate(report, dateFrom, dateTo, filter, preparedBy);
