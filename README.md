@@ -29,7 +29,7 @@ Defines the shared contracts used across all projects.
 |------|---------|
 | `IReportModel` | Marker interface for all report model classes |
 | `IReportBuilder<TModel>` | Converts a model into a MigraDoc `Document` |
-| `IReportRenderer` | Renders a `Document` to a `byte[]` PDF |
+| `IReportRenderer` | Renders a `Document` to a `byte[]` PDF, or directly to a `Stream` to avoid an intermediate buffer copy |
 
 **Models** (`Reporting.Core/Models/`) — raw data entities, one class per file
 
@@ -55,7 +55,7 @@ Implements PDF generation on top of MigraDoc/PDFsharp.
 
 | Type | Purpose |
 |------|---------|
-| `PdfReportRenderer` | Renders a `Document` → `byte[]`; exposes `BuildAndRender<TModel>()` so callers never reference MigraDoc types directly |
+| `PdfReportRenderer` | Renders a `Document` → `byte[]` or directly to a `Stream`; exposes `BuildAndRender<TModel>()`, `BuildAndRenderToStream<TModel>()`, and their `*Async` counterparts so callers never reference MigraDoc types directly |
 | `WindowsFontResolver` | `IFontResolver` implementation; maps Calibri, Arial and Courier New (regular/bold/italic) to TTF files in `C:\Windows\Fonts` |
 | `MasterReportTemplate<TModel>` | Abstract base for all report builders; handles page setup, repeating header, and three-column footer |
 | `ReportStyles` | Single source of truth for every visual property — colours, font name, font sizes, and spacing. Edit this file only to restyle any report. |
@@ -68,7 +68,7 @@ Implements PDF generation on top of MigraDoc/PDFsharp.
 
 ### Reporting.Tests
 
-xUnit test project targeting net8.0. Covers `Reporting.Core` and `Reporting.Pdf` with 156 tests across 18 files.
+xUnit test project targeting net8.0. Covers `Reporting.Core` and `Reporting.Pdf` with 186 tests across 18 files.
 
 | Folder | What is tested |
 |--------|----------------|
@@ -314,7 +314,7 @@ The default logo is a 200×56 px PNG (navy rounded rectangle, "RD" in white, "RE
 
 - `Reporting.Core` and `Reporting.Pdf` target `netstandard2.0`, making them compatible with both .NET Framework 4.8 and .NET 8 without modification.
 - `WindowsFontResolver` is registered once in `PdfReportRenderer`'s static constructor. PDFsharp on .NET Core does not read GDI+ system fonts automatically, so this is required.
-- `PdfReportRenderer.BuildAndRender<TModel>()` keeps web layers fully decoupled from MigraDoc — neither web project needs to reference the `Document` type directly.
+- `PdfReportRenderer.BuildAndRender<TModel>()` keeps web layers fully decoupled from MigraDoc — neither web project needs to reference the `Document` type directly. `BuildAndRenderToStream<TModel>()` writes directly to the caller's stream (e.g. an HTTP response stream) with no intermediate `byte[]` allocation. `BuildAndRenderAsync<TModel>()` and `BuildAndRenderToStreamAsync<TModel>()` wrap the CPU-bound render in `Task.Run`, freeing the calling thread during rendering — this is thread-pool offload, not true async I/O.
 - Data services have no shared interface — each exposes a typed `Get*()` method (e.g. `GetLines`, `GetCustomerGroups`, `GetRows`) that returns raw data entities. The calling code (Razor Page handler or ASHX handler) assembles the Core model from those entities plus any user-supplied metadata such as `PreparedBy` or date range. `ReportService` in each web project then accepts the fully-populated Core model and renders it to PDF bytes — it never touches the database.
 - This separation mirrors the real-world pattern where a DAL layer returns query results (rows, groups, aggregates) and the application layer maps them into the domain model before handing off to a downstream service.
 - `Reporting.Core/Models/` contains raw data entities (one class per file). `Reporting.Core/Templates/` contains `IReportModel` implementations that hold the report-level aggregations. This split scales cleanly to 50+ reports without any single file growing large.
