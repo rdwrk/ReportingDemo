@@ -87,11 +87,24 @@ namespace Reporting.Tests.Pdf
         }
 
         [Fact]
-        public void Apply_SetsNormalFontToCalibri()
+        public void Apply_SetsNormalFontToFontBodyConstant()
         {
             var doc = new Document();
             ReportStyles.Apply(doc);
-            Assert.Equal("Calibri", doc.Styles[StyleNames.Normal].Font.Name);
+            Assert.Equal(ReportStyles.FontBody, doc.Styles[StyleNames.Normal].Font.Name);
         }
+
+        // ── Font and size constants ──────────────────────────────────────────────
+
+        [Fact] public void FontBody_ConstantValue()          => Assert.Equal("Calibri", ReportStyles.FontBody);
+        [Fact] public void SizeTitle_ConstantValue()         => Assert.Equal(18,        ReportStyles.SizeTitle);
+        [Fact] public void SizeSubtitle_ConstantValue()      => Assert.Equal(11,        ReportStyles.SizeSubtitle);
+        [Fact] public void SizeSection_ConstantValue()       => Assert.Equal(12,        ReportStyles.SizeSection);
+        [Fact] public void SizeNormal_ConstantValue()        => Assert.Equal(10,        ReportStyles.SizeNormal);
+        [Fact] public void SizeTable_ConstantValue()         => Assert.Equal(9,         ReportStyles.SizeTable);
+        [Fact] public void SizeFooter_ConstantValue()        => Assert.Equal(8,         ReportStyles.SizeFooter);
+        [Fact] public void SpaceSubtitleAfter_ConstantValue()=> Assert.Equal(6,         ReportStyles.SpaceSubtitleAfter);
+        [Fact] public void SpaceSectionBefore_ConstantValue()=> Assert.Equal(10,        ReportStyles.SpaceSectionBefore);
+        [Fact] public void SpaceSectionAfter_ConstantValue() => Assert.Equal(4,         ReportStyles.SpaceSectionAfter);
     }
 }

@@ -58,7 +58,7 @@ Implements PDF generation on top of MigraDoc/PDFsharp.
 | `PdfReportRenderer` | Renders a `Document` → `byte[]`; exposes `BuildAndRender<TModel>()` so callers never reference MigraDoc types directly |
 | `WindowsFontResolver` | `IFontResolver` implementation; maps Calibri, Arial and Courier New (regular/bold/italic) to TTF files in `C:\Windows\Fonts` |
 | `MasterReportTemplate<TModel>` | Abstract base for all report builders; handles page setup, repeating header, and three-column footer |
-| `ReportStyles` | Centralised MigraDoc style definitions (colours, fonts, paragraph styles) |
+| `ReportStyles` | Single source of truth for every visual property — colours, font name, font sizes, and spacing. Edit this file only to restyle any report. |
 | `ReportTableBuilder` | Fluent builder for data tables with proportional column widths, alternating row shading, group headers, total rows, and repeating column headers on page breaks |
 | `SummaryPanel` | Renders a key/value summary block as a two-pair-per-row table |
 | `LogoProvider` | Extracts the embedded default logo PNG to a temp file and returns its path for MigraDoc image loading |
@@ -305,6 +305,7 @@ The default logo is a 200×56 px PNG (navy rounded rectangle, "RD" in white, "RE
 - `Reporting.WebFormsDemo` uses an old-style WAP `.csproj` that requires every `.cs` file to have an explicit `<Compile>` entry — unlike the SDK-style WebDemo project which discovers `.cs` files automatically.
 - Table column headers repeat on every page break (`HeadingFormat = true`).
 - Group header rows use `KeepWith = 2` to prevent orphaned headers at page boundaries.
+- `ReportStyles` is the single file to edit when changing visual properties. Font name (`FontBody`), font sizes (`SizeTitle`, `SizeTable`, etc.), spacing (`SpaceSectionBefore`, etc.), and all colour hex strings are declared as named constants there and referenced by `Apply()` — no magic numbers are embedded in the method body.
 - `MasterReportTemplate.GetContentWidthCm()` assumes A4 page dimensions (29.7 × 21.0 cm). If you add a report that overrides `PageFormat` to a non-A4 size, update this method accordingly.
 - `ReportTableBuilder.AddRow()` silently ignores values beyond the declared column count, preventing `IndexOutOfRangeException` if a caller passes too many cells.
 - All report builders guard against a null `Items` / `CustomerGroups` / `Rows` collection — an empty model renders a valid PDF with no data rows rather than throwing.
